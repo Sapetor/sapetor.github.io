@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="140" viewBox="0 0 400 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="140" fill="white"/>
+  <!-- Vin source -->
+  <circle cx="30" cy="70" r="10" stroke="black" stroke-width="2" fill="none"/>
+  <text x="10" y="65" font-size="14">Vin</text>
+  <line x1="40" y1="70" x2="80" y2="70" stroke="black" stroke-width="2"/>
+  <!-- Resistor -->
+  <rect x="80" y="60" width="40" height="20" fill="none" stroke="black" stroke-width="2"/>
+  <text x="90" y="55" font-size="14">R</text>
+  <line x1="120" y1="70" x2="170" y2="70" stroke="black" stroke-width="2"/>
+  <!-- Inductor -->
+  <path d="M170 70 Q175 60 180 70 Q185 80 190 70 Q195 60 200 70 Q205 80 210 70 Q215 60 220 70" stroke="black" stroke-width="2" fill="none"/>
+  <text x="185" y="55" font-size="14">L</text>
+  <line x1="220" y1="70" x2="260" y2="70" stroke="black" stroke-width="2"/>
+  <!-- Capacitor -->
+  <line x1="260" y1="60" x2="260" y2="80" stroke="black" stroke-width="2"/>
+  <line x1="270" y1="60" x2="270" y2="80" stroke="black" stroke-width="2"/>
+  <line x1="260" y1="60" x2="270" y2="60" stroke="black" stroke-width="2"/>
+  <line x1="260" y1="80" x2="270" y2="80" stroke="black" stroke-width="2"/>
+  <text x="255" y="55" font-size="14">C</text>
+  <line x1="270" y1="70" x2="350" y2="70" stroke="black" stroke-width="2"/>
+  <!-- Output -->
+  <circle cx="350" cy="70" r="4" fill="black"/>
+  <text x="355" y="65" font-size="14">Vout</text>
+  <!-- Ground -->
+  <line x1="350" y1="70" x2="350" y2="110" stroke="black" stroke-width="2"/>
+  <line x1="340" y1="110" x2="360" y2="110" stroke="black" stroke-width="2"/>
+  <line x1="343" y1="114" x2="357" y2="114" stroke="black" stroke-width="2"/>
+  <line x1="346" y1="118" x2="354" y2="118" stroke="black" stroke-width="2"/>
+</svg> 
