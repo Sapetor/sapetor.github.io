@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/assets/circuitos_RLC/static/css/main.73548ee8.css",
-    "main.js": "/assets/circuitos_RLC/static/js/main.29fb5dea.js",
+    "main.css": "/assets/circuitos_RLC/static/css/main.a39f2a2d.css",
+    "main.js": "/assets/circuitos_RLC/static/js/main.021529cb.js",
     "static/media/KaTeX_AMS-Regular.ttf": "/assets/circuitos_RLC/static/media/KaTeX_AMS-Regular.853be92419a6c3766b9a.ttf",
     "static/media/KaTeX_Main-Regular.ttf": "/assets/circuitos_RLC/static/media/KaTeX_Main-Regular.9eba1d77abcf2aa6e94e.ttf",
     "static/media/KaTeX_Main-Bold.ttf": "/assets/circuitos_RLC/static/media/KaTeX_Main-Bold.8169508bf58f8bd92ad8.ttf",
@@ -63,11 +63,11 @@
     "static/media/KaTeX_Size3-Regular.woff": "/assets/circuitos_RLC/static/media/KaTeX_Size3-Regular.7947224e8a9914fa332b.woff",
     "static/media/KaTeX_Size3-Regular.woff2": "/assets/circuitos_RLC/static/media/KaTeX_Size3-Regular.e1951519f6f0596f7356.woff2",
     "index.html": "/assets/circuitos_RLC/index.html",
-    "main.73548ee8.css.map": "/assets/circuitos_RLC/static/css/main.73548ee8.css.map",
-    "main.29fb5dea.js.map": "/assets/circuitos_RLC/static/js/main.29fb5dea.js.map"
+    "main.a39f2a2d.css.map": "/assets/circuitos_RLC/static/css/main.a39f2a2d.css.map",
+    "main.021529cb.js.map": "/assets/circuitos_RLC/static/js/main.021529cb.js.map"
   },
   "entrypoints": [
-    "static/css/main.73548ee8.css",
-    "static/js/main.29fb5dea.js"
+    "static/css/main.a39f2a2d.css",
+    "static/js/main.021529cb.js"
   ]
 }
