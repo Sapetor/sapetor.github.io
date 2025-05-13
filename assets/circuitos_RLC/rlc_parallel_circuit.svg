@@ -1,16 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="400" height="200" viewBox="0 0 400 200" fill="none" xmlns="http://www.w3.org/2000/svg">
   <rect width="400" height="200" fill="white"/>
-  <!-- Step voltage source -->
+  <!-- Step current source (horizontal, points right) -->
   <circle cx="30" cy="110" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
-  <text x="5" y="85" font-size="14" fill="currentColor">v(t) = V u(t)</text>
-  <text x="8" y="105" font-size="13" fill="currentColor">+</text>
-  <text x="8" y="125" font-size="13" fill="currentColor">-</text>
+  <line x1="23" y1="110" x2="37" y2="110" stroke="currentColor" stroke-width="2" marker-end="url(#arrowheadCurrent)"/>
+  <text x="5" y="85" font-size="14" fill="currentColor">i(t) = I u(t)</text>
   <line x1="40" y1="110" x2="90" y2="110" stroke="currentColor" stroke-width="2"/>
   <!-- Node -->
   <circle cx="90" cy="110" r="3" fill="currentColor"/>
-  <!-- Vout label at central node, shifted higher -->
-  <text x="100" y="95" font-size="14" fill="currentColor">Vout(t)</text>
   <!-- R branch (up) -->
   <line x1="90" y1="110" x2="90" y2="70" stroke="currentColor" stroke-width="2"/>
   <rect x="80" y="50" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -23,6 +20,10 @@
   <path d="M130 110 Q135 100 140 110 Q145 120 150 110 Q155 100 160 110 Q165 120 170 110 Q175 100 180 110" stroke="currentColor" stroke-width="2" fill="none"/>
   <line x1="180" y1="110" x2="220" y2="110" stroke="currentColor" stroke-width="2"/>
   <text x="155" y="100" font-size="14" fill="currentColor">L</text>
+  <!-- Add current arrow further left of L, pointing right -->
+  <line x1="100" y1="110" x2="115" y2="110" stroke="currentColor" stroke-width="2" marker-end="url(#arrowheadCurrent)"/>
+  <!-- Move iL(t) label under the arrow, further left -->
+  <text x="102" y="125" font-size="14" fill="currentColor">iL(t)</text>
   <!-- C branch (down, vertical and centered, moved left) -->
   <line x1="90" y1="110" x2="90" y2="170" stroke="currentColor" stroke-width="2"/>
   <line x1="80" y1="150" x2="100" y2="150" stroke="currentColor" stroke-width="3"/>
@@ -44,4 +45,15 @@
   <line x1="20" y1="180" x2="40" y2="180" stroke="currentColor" stroke-width="2"/>
   <line x1="23" y1="184" x2="37" y2="184" stroke="currentColor" stroke-width="2"/>
   <line x1="26" y1="188" x2="34" y2="188" stroke="currentColor" stroke-width="2"/>
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0,0 8,4 0,8 2,4" fill="currentColor" />
+    </marker>
+    <marker id="arrowheadSmall" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0,0 5,2.5 0,5 1.2,2.5" fill="currentColor" />
+    </marker>
+    <marker id="arrowheadCurrent" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0,0 6,3 0,6 1.2,3" fill="currentColor" />
+    </marker>
+  </defs>
 </svg> 
