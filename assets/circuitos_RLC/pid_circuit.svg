@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="120" viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="120" fill="white"/>
+  <!-- Input arrow -->
+  <line x1="20" y1="60" x2="80" y2="60" stroke="black" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="10" y="55" font-size="14">r(t)</text>
+  <!-- PID block -->
+  <rect x="80" y="40" width="60" height="40" fill="none" stroke="black" stroke-width="2"/>
+  <text x="95" y="65" font-size="16">PID</text>
+  <!-- Arrow to sum -->
+  <line x1="140" y1="60" x2="200" y2="60" stroke="black" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="150" y="55" font-size="14">u(t)</text>
+  <!-- Sum circle -->
+  <circle cx="200" cy="60" r="12" stroke="black" stroke-width="2" fill="white"/>
+  <text x="196" y="66" font-size="18">Σ</text>
+  <!-- Arrow to output -->
+  <line x1="212" y1="60" x2="300" y2="60" stroke="black" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="260" y="55" font-size="14">y(t)</text>
+  <!-- Output node -->
+  <circle cx="300" cy="60" r="4" fill="black"/>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="black"/>
+    </marker>
+  </defs>
+</svg> 

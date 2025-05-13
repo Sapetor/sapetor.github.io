@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="160" viewBox="0 0 400 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="160" fill="white"/>
+  <!-- Step voltage source -->
+  <circle cx="30" cy="70" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
+  <text x="5" y="25" font-size="14" fill="currentColor">v(t) = V u(t)</text>
+  <text x="8" y="65" font-size="13" fill="currentColor">+</text>
+  <text x="8" y="85" font-size="13" fill="currentColor">-</text>
+  <line x1="40" y1="70" x2="70" y2="70" stroke="currentColor" stroke-width="2"/>
+  <!-- Resistor -->
+  <rect x="70" y="60" width="40" height="20" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="85" y="55" font-size="14" fill="currentColor">R</text>
+  <line x1="110" y1="70" x2="160" y2="70" stroke="currentColor" stroke-width="2"/>
+  <!-- Inductor (rounded style) -->
+  <path d="M160 70 Q165 60 170 70 Q175 80 180 70 Q185 60 190 70 Q195 80 200 70 Q205 60 210 70" stroke="currentColor" stroke-width="2" fill="none"/>
+  <text x="185" y="55" font-size="14" fill="currentColor">L</text>
+  <line x1="210" y1="70" x2="250" y2="70" stroke="currentColor" stroke-width="2"/>
+  <!-- Capacitor: two parallel lines -->
+  <line x1="255" y1="60" x2="255" y2="80" stroke="currentColor" stroke-width="3"/>
+  <line x1="265" y1="60" x2="265" y2="80" stroke="currentColor" stroke-width="3"/>
+  <text x="260" y="55" font-size="14" fill="currentColor">C</text>
+  <!-- Vout polarity symbols (lowered) -->
+  <text x="245" y="85" font-size="13" fill="currentColor">+</text>
+  <text x="272" y="85" font-size="13" fill="currentColor">-</text>
+  <!-- Vout label below polarity symbols -->
+  <text x="250" y="105" font-size="14" fill="currentColor">Vout(t)</text>
+  <line x1="265" y1="70" x2="350" y2="70" stroke="currentColor" stroke-width="2"/>
+  <!-- Output -->
+  <circle cx="350" cy="70" r="4" fill="currentColor"/>
+  <!-- Ground at source -->
+  <line x1="30" y1="80" x2="30" y2="120" stroke="currentColor" stroke-width="2"/>
+  <line x1="20" y1="120" x2="40" y2="120" stroke="currentColor" stroke-width="2"/>
+  <line x1="23" y1="124" x2="37" y2="124" stroke="currentColor" stroke-width="2"/>
+  <line x1="26" y1="128" x2="34" y2="128" stroke="currentColor" stroke-width="2"/>
+  <!-- Ground at output -->
+  <line x1="350" y1="70" x2="350" y2="110" stroke="currentColor" stroke-width="2"/>
+  <line x1="340" y1="110" x2="360" y2="110" stroke="currentColor" stroke-width="2"/>
+  <line x1="343" y1="114" x2="357" y2="114" stroke="currentColor" stroke-width="2"/>
+  <line x1="346" y1="118" x2="354" y2="118" stroke="currentColor" stroke-width="2"/>
+</svg> 
