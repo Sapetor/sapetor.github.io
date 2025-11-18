@@ -9,36 +9,47 @@ const HISTORY_LENGTH = 100;
 
 // Vehicle Dynamics and Control Constants
 const MIN_SPACING = 50; // Minimum spacing d_0 (meters converted to pixels)
-const TIME_HEADWAY = 1.0; // Constant time headway τ (seconds)
+const DEFAULT_TIME_HEADWAY = 1.0; // Default time headway τ (seconds)
 const SPEED_TO_PIXEL_RATIO = 50; // Conversion: 1 m/s = 50 pixels in simulation
 const DT = 0.016; // Time step (seconds) - approximately 60fps
 const VEHICLE_TIME_CONSTANT = 0.5; // τ_vehicle (seconds) - first-order vehicle dynamics lag
 
-// Preset scenarios for control gains
+// Preset scenarios for control gains and time headway
 const PRESETS = {
   stable: {
-    name: "String Stable",
-    description: "Optimal control gains for string stability",
+    name: "String Stable (τ=1.0s)",
+    description: "Optimal gains with moderate time headway",
     kp: 0.5,
-    kd: 0.8
+    kd: 0.8,
+    tau: 1.0
+  },
+  unstableSmallTau: {
+    name: "Unstable (τ=0.1s)",
+    description: "Small time headway causes string instability",
+    kp: 0.5,
+    kd: 0.8,
+    tau: 0.1
+  },
+  stableLargeTau: {
+    name: "Stable (τ=2.0s)",
+    description: "Large time headway improves string stability",
+    kp: 0.5,
+    kd: 0.8,
+    tau: 2.0
+  },
+  zeroTau: {
+    name: "Constant Spacing (τ=0)",
+    description: "No time headway - constant spacing only",
+    kp: 0.4,
+    kd: 0.6,
+    tau: 0.0
   },
   aggressive: {
     name: "Aggressive (Unstable)",
-    description: "High position gain, low damping - causes oscillations",
+    description: "High position gain, low damping",
     kp: 1.2,
-    kd: 0.2
-  },
-  conservative: {
-    name: "Conservative",
-    description: "Low gains, slow response",
-    kp: 0.2,
-    kd: 0.6
-  },
-  underdamped: {
-    name: "Underdamped",
-    description: "Low damping leads to oscillations",
-    kp: 0.6,
-    kd: 0.3
+    kd: 0.2,
+    tau: 1.0
   }
 };
 
@@ -294,6 +305,7 @@ const EnhancedStringStabilityDemo = () => {
   const [targetSpeed, setTargetSpeed] = useState(2.0);
   const [kp, setKp] = useState(0.5); // Position gain
   const [kd, setKd] = useState(0.8); // Velocity/damping gain
+  const [tau, setTau] = useState(DEFAULT_TIME_HEADWAY); // Time headway constant
   const [leadVehicleSpeed, setLeadVehicleSpeed] = useState(0);
   const [applyingBrake, setApplyingBrake] = useState(false);
   const [stabilityScore, setStabilityScore] = useState(100);
@@ -310,12 +322,13 @@ const EnhancedStringStabilityDemo = () => {
     const preset = PRESETS[presetKey];
     setKp(preset.kp);
     setKd(preset.kd);
+    setTau(preset.tau);
     setSelectedPreset(presetKey);
   };
 
   // Calculate desired spacing based on constant time headway policy
   const calculateDesiredSpacing = (leaderVelocity) => {
-    return MIN_SPACING + TIME_HEADWAY * leaderVelocity;
+    return MIN_SPACING + tau * leaderVelocity;
   };
 
   // Calculate stability score
@@ -459,7 +472,7 @@ const EnhancedStringStabilityDemo = () => {
     newVehicles[leaderIndex].velocity = 0;
 
     // Initialize followers with proper spacing
-    const initialSpacing = MIN_SPACING + TIME_HEADWAY * 0; // Start with spacing for v=0
+    const initialSpacing = MIN_SPACING + tau * 0; // Start with spacing for v=0
     for (let i = leaderIndex - 1; i >= 0; i--) {
       newVehicles[i].x = newVehicles[i + 1].x - initialSpacing;
       newVehicles[i].velocity = 0;
@@ -504,7 +517,7 @@ const EnhancedStringStabilityDemo = () => {
         animationRef.current = null;
       }
     };
-  }, [running, kp, kd]);
+  }, [running, kp, kd, tau]);
 
   // Dark mode effect
   useEffect(() => {
@@ -586,7 +599,7 @@ const EnhancedStringStabilityDemo = () => {
                 <code className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded mx-1">
                   d* = d₀ + τ·v<sub>lead</sub>
                 </code>
-                where d₀ = {MIN_SPACING}px and τ = {TIME_HEADWAY}s (constant).
+                where d₀ = {MIN_SPACING}px and τ is the time headway constant (adjustable).
               </p>
               <p>
                 <strong>Control Law:</strong> Each vehicle uses a PD controller:
@@ -595,12 +608,17 @@ const EnhancedStringStabilityDemo = () => {
                 </code>
               </p>
               <p>
-                <strong>String Stability:</strong> For the platoon to be string stable, disturbances should not amplify
-                as they propagate. The gains K<sub>p</sub> and K<sub>d</sub> must satisfy specific conditions related to
-                the time headway τ.
+                <strong>String Stability & Time Headway:</strong> For the platoon to be string stable, disturbances should
+                not amplify as they propagate. String stability depends critically on τ:
               </p>
-              <p className="text-xs mt-3 text-gray-600 dark:text-gray-400">
-                Try the "Aggressive (Unstable)" preset to see string instability - oscillations amplify along the platoon!
+              <ul className="list-disc ml-6 space-y-1">
+                <li><strong>Small τ (≈0):</strong> Constant spacing policy - harder to achieve string stability, requires high damping K<sub>d</sub></li>
+                <li><strong>Large τ (≥1.5s):</strong> Generous spacing at speed - easier to maintain string stability</li>
+                <li>Theoretical result: For string stability, typically requires K<sub>d</sub> ≳ 2·K<sub>p</sub>·τ</li>
+              </ul>
+              <p className="text-xs mt-3 text-gray-600 dark:text-gray-400 bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded">
+                <strong>Experiment:</strong> Try the presets to see how τ affects string stability! Compare "Unstable (τ=0.1s)" vs "Stable (τ=2.0s)"
+                with identical control gains to see the dramatic effect of time headway.
               </p>
             </div>
           </div>
@@ -642,8 +660,8 @@ const EnhancedStringStabilityDemo = () => {
 
           {/* Preset Scenarios */}
           <div className="mb-6">
-            <label className="block text-sm font-medium mb-2">Control Gain Presets:</label>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+            <label className="block text-sm font-medium mb-2">Scenario Presets (vary τ to test string stability):</label>
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
               {Object.entries(PRESETS).map(([key, preset]) => (
                 <button
                   key={key}
@@ -656,7 +674,7 @@ const EnhancedStringStabilityDemo = () => {
                 >
                   <div className="font-medium text-sm">{preset.name}</div>
                   <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                    Kp={preset.kp}, Kd={preset.kd}
+                    {preset.description}
                   </div>
                 </button>
               ))}
@@ -709,8 +727,22 @@ const EnhancedStringStabilityDemo = () => {
               <span className="w-20 text-right font-mono text-sm">{kd.toFixed(1)}</span>
             </div>
 
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <label className="w-40 text-sm font-medium">Time Headway (τ):</label>
+              <input
+                type="range"
+                min="0.0"
+                max="3.0"
+                step="0.1"
+                value={tau}
+                onChange={(e) => setTau(parseFloat(e.target.value))}
+                className="flex-1"
+              />
+              <span className="w-20 text-right font-mono text-sm">{tau.toFixed(1)}s</span>
+            </div>
+
             <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded text-xs">
-              <strong>Fixed Parameters:</strong> d₀ = {MIN_SPACING}px, τ = {TIME_HEADWAY}s (constant time headway), τ<sub>vehicle</sub> = {VEHICLE_TIME_CONSTANT}s (actuator lag)
+              <strong>Fixed Parameters:</strong> d₀ = {MIN_SPACING}px, τ<sub>vehicle</sub> = {VEHICLE_TIME_CONSTANT}s (actuator lag)
             </div>
           </div>
         </div>
@@ -806,7 +838,7 @@ const EnhancedStringStabilityDemo = () => {
                 u<sub>i</sub> = K<sub>p</sub>·(x<sub>i+1</sub> - x<sub>i</sub> - d*) - K<sub>d</sub>·(ẋ<sub>i</sub> - ẋ<sub>i+1</sub>)
               </code>
               <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
-                d* = {MIN_SPACING} + {TIME_HEADWAY}·ẋ<sub>i+1</sub> (constant time headway policy)
+                d* = {MIN_SPACING} + {tau.toFixed(1)}·ẋ<sub>i+1</sub> (constant time headway policy, τ = {tau.toFixed(1)}s)
               </p>
             </div>
 
