@@ -12,6 +12,7 @@ const MIN_SPACING = 50; // Minimum spacing d_0 (meters converted to pixels)
 const TIME_HEADWAY = 1.0; // Constant time headway τ (seconds)
 const SPEED_TO_PIXEL_RATIO = 50; // Conversion: 1 m/s = 50 pixels in simulation
 const DT = 0.016; // Time step (seconds) - approximately 60fps
+const VEHICLE_TIME_CONSTANT = 0.5; // τ_vehicle (seconds) - first-order vehicle dynamics lag
 
 // Preset scenarios for control gains
 const PRESETS = {
@@ -390,10 +391,15 @@ const EnhancedStringStabilityDemo = () => {
         //       velocity_error is positive when going faster than leader, so we decelerate (negative control)
         const controlInput = kp * spacingError - kd * velocityError;
 
-        // Apply control input as acceleration (with saturation)
-        vehicle.acceleration = Math.max(-0.2, Math.min(0.05, controlInput));
+        // Saturate control input to realistic bounds
+        const saturatedControl = Math.max(-0.2, Math.min(0.05, controlInput));
 
-        // Integrate dynamics: v(t+dt) = v(t) + a*dt
+        // First-order vehicle dynamics: τ_vehicle * ȧ = u - a
+        // In discrete form: a(t+dt) = a(t) + ((u - a) / τ_vehicle) * dt
+        const accelerationRate = (saturatedControl - vehicle.acceleration) / VEHICLE_TIME_CONSTANT;
+        vehicle.acceleration += accelerationRate * deltaTime;
+
+        // Integrate velocity: v(t+dt) = v(t) + a*dt
         vehicle.velocity += vehicle.acceleration * deltaTime;
         vehicle.velocity = Math.max(0, Math.min(vehicle.velocity, MAX_SPEED));
 
@@ -704,7 +710,7 @@ const EnhancedStringStabilityDemo = () => {
             </div>
 
             <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded text-xs">
-              <strong>Fixed Parameters:</strong> d₀ = {MIN_SPACING}px, τ = {TIME_HEADWAY}s (constant time headway)
+              <strong>Fixed Parameters:</strong> d₀ = {MIN_SPACING}px, τ = {TIME_HEADWAY}s (constant time headway), τ<sub>vehicle</sub> = {VEHICLE_TIME_CONSTANT}s (actuator lag)
             </div>
           </div>
         </div>
@@ -779,12 +785,18 @@ const EnhancedStringStabilityDemo = () => {
 
           <div className="space-y-4 text-sm">
             <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <p className="font-semibold mb-2">Dynamics:</p>
+              <p className="font-semibold mb-2">Vehicle Dynamics:</p>
+              <code className="block mb-1">
+                τ<sub>vehicle</sub>·ȧ<sub>i</sub> = u<sub>i</sub> - a<sub>i</sub>
+              </code>
+              <code className="block mb-1">
+                ẋ<sub>i</sub> = v<sub>i</sub>
+              </code>
               <code className="block">
-                ẍ<sub>i</sub> = u<sub>i</sub>
+                v̇<sub>i</sub> = a<sub>i</sub>
               </code>
               <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
-                Each vehicle's acceleration equals its control input (unit mass assumed)
+                First-order actuator dynamics (τ<sub>vehicle</sub> = {VEHICLE_TIME_CONSTANT}s) + double integrator kinematics
               </p>
             </div>
 
