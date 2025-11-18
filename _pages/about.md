@@ -137,7 +137,7 @@ schema_markup: >
 
 My research focuses on control systems theory and its applications, with particular emphasis on multi-agent systems and scalability (string stability) in formation control of autonomous vehicles. I am also an embedded systems enthusiast and I pursue their use in teaching and industrial applications. I am currently the Director of the Computer Engineering BSc program at UAI.
 
-Please do not heasitate to contact me (andres (dot) peters (at) uai (dot) cl) if you are interested in our postgraduate programs at UAI ([MCI - Magíster en Ciencias de la Ingeniería](https://www.uai.cl/postgrados/master-of-science/magister-en-ciencias-de-la-ingenieria) and [DDS - Doctorado en Data Science](https://www.uai.cl/postgrados/doctorados/doctorado-en-data-science))
+Please do not hesitate to contact me (andres (dot) peters (at) uai (dot) cl) if you are interested in our postgraduate programs at UAI ([MCI - Magíster en Ciencias de la Ingeniería](https://www.uai.cl/postgrados/master-of-science/magister-en-ciencias-de-la-ingenieria) and [DDS - Doctorado en Data Science](https://www.uai.cl/postgrados/doctorados/doctorado-en-data-science))
 
 ## Research Interests
 
