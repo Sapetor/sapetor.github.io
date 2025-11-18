@@ -57,7 +57,3 @@ nav_order: 5
    - 19 autonomous programmable robots
    - Remote laboratory platform with activity guides
    - GitHub: [https://github.com/ProyectoMultiagentes/openPMA](https://github.com/ProyectoMultiagentes/openPMA)
-
-## Student Supervision
-
-- TBU
