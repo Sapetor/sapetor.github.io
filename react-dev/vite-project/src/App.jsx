@@ -1,59 +1,47 @@
-import { Truck, Play, Pause, RotateCcw, Info } from 'lucide-react';
+import { Play, Pause, RotateCcw, Info } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 
 // Helper Constants
 const VEHICLE_COUNT = 5;
-const BASE_SPACING = 100;
-const LEADER_BASE_POSITION = 800;
-const BASE_SPEED = 800 / 3000;
+const LEADER_BASE_POSITION = 600;
 const MAX_SPEED = 5;
-
-// Vehicle Dynamics Constants
-const MIN_SPACING = 50;
-const DEFAULT_TIME_HEADWAY = 1.0;
-const MAX_ACCELERATION = 0.001;
-const MAX_DECELERATION = 0.2;
-const DRAG_COEFFICIENT = 0.002;
-const SPEED_TO_PIXEL_RATIO = 50;
 const HISTORY_LENGTH = 100;
 
-// Preset scenarios
+// Vehicle Dynamics and Control Constants
+const MIN_SPACING = 50; // Minimum spacing d_0 (meters converted to pixels)
+const TIME_HEADWAY = 1.0; // Constant time headway τ (seconds)
+const SPEED_TO_PIXEL_RATIO = 50; // Conversion: 1 m/s = 50 pixels in simulation
+const DT = 0.016; // Time step (seconds) - approximately 60fps
+
+// Preset scenarios for control gains
 const PRESETS = {
   stable: {
     name: "String Stable",
     description: "Optimal control gains for string stability",
-    controllerGain: 0.3,
-    dampingGain: 0.15,
-    timeHeadway: 1.2,
-    useAdaptiveCruise: true
+    kp: 0.5,
+    kd: 0.8
   },
   aggressive: {
     name: "Aggressive (Unstable)",
-    description: "High gains leading to oscillations",
-    controllerGain: 0.6,
-    dampingGain: 0.05,
-    timeHeadway: 0.5,
-    useAdaptiveCruise: true
+    description: "High position gain, low damping - causes oscillations",
+    kp: 1.2,
+    kd: 0.2
   },
   conservative: {
     name: "Conservative",
-    description: "Large spacing, slow response",
-    controllerGain: 0.15,
-    dampingGain: 0.2,
-    timeHeadway: 2.0,
-    useAdaptiveCruise: true
+    description: "Low gains, slow response",
+    kp: 0.2,
+    kd: 0.6
   },
-  fixed: {
-    name: "Fixed Spacing (No ACC)",
-    description: "Traditional fixed spacing control",
-    controllerGain: 0.25,
-    dampingGain: 0.1,
-    timeHeadway: 1.0,
-    useAdaptiveCruise: false
+  underdamped: {
+    name: "Underdamped",
+    description: "Low damping leads to oscillations",
+    kp: 0.6,
+    kd: 0.3
   }
 };
 
-// Element type definitions
+// Element type definitions for scenery
 const elementTypes = [
   { type: 'tree', scale: 1.0, yOffset: 0, speed: 'foreground', layer: 1 },
   { type: 'smallTree', scale: 0.6, yOffset: 10, speed: 'background', layer: 0 },
@@ -120,8 +108,6 @@ const initializeVehicles = () => {
     x: 0,
     velocity: 0,
     acceleration: 0,
-    desiredSpacing: BASE_SPACING,
-    timeHeadway: DEFAULT_TIME_HEADWAY,
     color: `hsl(${(i * 360 / VEHICLE_COUNT)}, 70%, 50%)`,
     braking: false
   }));
@@ -173,12 +159,12 @@ const StreetLight = ({ x, isDarkMode }) => {
 };
 
 // Vehicle Component
-const Vehicle = ({ x, color, isLeader, isDarkMode, velocity, acceleration, braking, desiredSpacing, actualSpacing }) => {
-  const isAccelerating = acceleration > 0.05;
-  const isDecelerating = acceleration < -0.05 || braking;
+const Vehicle = ({ x, color, isLeader, isDarkMode, velocity, acceleration, desiredSpacing, actualSpacing }) => {
+  const isAccelerating = acceleration > 0.01;
+  const isDecelerating = acceleration < -0.01;
 
   const spacingError = actualSpacing !== undefined ? (actualSpacing - desiredSpacing) : 0;
-  const spacingStatus = Math.abs(spacingError) < 5 ? "optimal" :
+  const spacingStatus = Math.abs(spacingError) < 10 ? "optimal" :
                         spacingError > 0 ? "too-far" : "too-close";
 
   return (
@@ -221,7 +207,7 @@ const Vehicle = ({ x, color, isLeader, isDarkMode, velocity, acceleration, braki
 
       {/* Speed indicator */}
       <text x="0" y="2" textAnchor="middle" fill="#fff" fontSize="9" fontWeight="500">
-        {Math.abs(velocity).toFixed(1)}
+        {Math.abs(velocity * (1/SPEED_TO_PIXEL_RATIO)).toFixed(1)} m/s
       </text>
 
       {/* Spacing status indicator */}
@@ -243,17 +229,32 @@ const Vehicle = ({ x, color, isLeader, isDarkMode, velocity, acceleration, braki
 const VelocityChart = ({ history, isDarkMode }) => {
   if (history.length < 2) return null;
 
-  const width = 300;
-  const height = 80;
-  const maxVel = Math.max(...history.flat(), 1);
+  const width = 400;
+  const height = 100;
+  const maxVel = Math.max(...history.flat(), 0.1);
 
   return (
     <svg width={width} height={height} className="border border-gray-300 dark:border-gray-600 rounded">
       <rect width={width} height={height} fill={isDarkMode ? "#1f2937" : "#f9fafb"} />
+
+      {/* Grid lines */}
+      {[0.25, 0.5, 0.75].map((frac, i) => (
+        <line
+          key={i}
+          x1="0"
+          y1={height * frac}
+          x2={width}
+          y2={height * frac}
+          stroke={isDarkMode ? "#374151" : "#e5e7eb"}
+          strokeWidth="1"
+        />
+      ))}
+
+      {/* Velocity curves */}
       {history[0]?.map((_, vehicleIdx) => {
         const points = history.map((snapshot, timeIdx) => {
           const x = (timeIdx / (HISTORY_LENGTH - 1)) * width;
-          const y = height - (snapshot[vehicleIdx] / maxVel) * height;
+          const y = height - (snapshot[vehicleIdx] / maxVel) * (height - 20);
           return `${x},${y}`;
         }).join(' ');
 
@@ -264,11 +265,20 @@ const VelocityChart = ({ history, isDarkMode }) => {
             fill="none"
             stroke={`hsl(${(vehicleIdx * 360 / VEHICLE_COUNT)}, 70%, 50%)`}
             strokeWidth="2"
-            opacity="0.7"
+            opacity="0.8"
           />
         );
       })}
-      <text x="5" y="15" fill={isDarkMode ? "#9ca3af" : "#6b7280"} fontSize="10">Velocity History</text>
+
+      <text x="5" y="15" fill={isDarkMode ? "#9ca3af" : "#6b7280"} fontSize="11" fontWeight="500">
+        Velocity History (m/s)
+      </text>
+      <text x="5" y={height - 5} fill={isDarkMode ? "#9ca3af" : "#6b7280"} fontSize="9">
+        0
+      </text>
+      <text x={width - 35} y={height - 5} fill={isDarkMode ? "#9ca3af" : "#6b7280"} fontSize="9">
+        {(HISTORY_LENGTH * DT).toFixed(0)}s
+      </text>
     </svg>
   );
 };
@@ -281,10 +291,8 @@ const EnhancedStringStabilityDemo = () => {
   const [elements, setElements] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [targetSpeed, setTargetSpeed] = useState(2.0);
-  const [controllerGain, setControllerGain] = useState(0.3);
-  const [dampingGain, setDampingGain] = useState(0.15);
-  const [timeHeadway, setTimeHeadway] = useState(DEFAULT_TIME_HEADWAY);
-  const [useAdaptiveCruise, setUseAdaptiveCruise] = useState(true);
+  const [kp, setKp] = useState(0.5); // Position gain
+  const [kd, setKd] = useState(0.8); // Velocity/damping gain
   const [leadVehicleSpeed, setLeadVehicleSpeed] = useState(0);
   const [applyingBrake, setApplyingBrake] = useState(false);
   const [stabilityScore, setStabilityScore] = useState(100);
@@ -299,11 +307,14 @@ const EnhancedStringStabilityDemo = () => {
   // Apply preset
   const applyPreset = (presetKey) => {
     const preset = PRESETS[presetKey];
-    setControllerGain(preset.controllerGain);
-    setDampingGain(preset.dampingGain);
-    setTimeHeadway(preset.timeHeadway);
-    setUseAdaptiveCruise(preset.useAdaptiveCruise);
+    setKp(preset.kp);
+    setKd(preset.kd);
     setSelectedPreset(presetKey);
+  };
+
+  // Calculate desired spacing based on constant time headway policy
+  const calculateDesiredSpacing = (leaderVelocity) => {
+    return MIN_SPACING + TIME_HEADWAY * leaderVelocity;
   };
 
   // Calculate stability score
@@ -311,36 +322,32 @@ const EnhancedStringStabilityDemo = () => {
     if (vehicles.length < 2) return 100;
 
     const leaderVelocity = vehicles[vehicles.length - 1].velocity;
+
+    // Velocity uniformity - how close are follower velocities to leader
     const velocityDiffs = vehicles.map(v => Math.abs(v.velocity - leaderVelocity));
+    const maxVelDiff = Math.max(...velocityDiffs);
+    const velocityScore = 100 * Math.exp(-maxVelDiff / 0.5);
 
-    const desiredSpacing = useAdaptiveCruise ?
-      (MIN_SPACING + leaderVelocity * timeHeadway * SPEED_TO_PIXEL_RATIO) :
-      BASE_SPACING;
-
+    // Spacing error - how close is actual spacing to desired
+    const desiredSpacing = calculateDesiredSpacing(leaderVelocity);
     const spacingErrors = vehicles.slice(0, -1).map((v, i) => {
       const leadVehicle = vehicles[i + 1];
       const actualSpacing = leadVehicle.x - v.x;
-      return Math.abs(actualSpacing - desiredSpacing) / Math.max(1, desiredSpacing);
+      const relativeError = Math.abs(actualSpacing - desiredSpacing) / Math.max(desiredSpacing, 1);
+      return relativeError;
     });
 
-    const maxAcceptableVelocityDiff = 1.0;
-    const maxAcceptableSpacingError = 0.2;
-
-    const velocityScore = 100 - Math.min(100,
-      Math.max(...velocityDiffs) / maxAcceptableVelocityDiff * 100);
-
-    const spacingScore = spacingErrors.length > 0 ?
-      (100 - Math.min(100, Math.max(...spacingErrors) / maxAcceptableSpacingError * 100)) :
-      100;
+    const maxSpacingError = Math.max(...spacingErrors, 0);
+    const spacingScore = 100 * Math.exp(-maxSpacingError * 2);
 
     return velocityScore * 0.6 + spacingScore * 0.4;
   };
 
-  // Animation update function
+  // Animation update function with correct dynamics
   const updateScene = (timestamp) => {
     if (!running) return;
 
-    const deltaTime = lastTimeRef.current ? (timestamp - lastTimeRef.current) / 1000 : 0.016;
+    const deltaTime = lastTimeRef.current ? Math.min((timestamp - lastTimeRef.current) / 1000, 0.1) : DT;
     lastTimeRef.current = timestamp;
 
     setVehicles(prev => {
@@ -348,71 +355,72 @@ const EnhancedStringStabilityDemo = () => {
       const leaderIndex = newVehicles.length - 1;
       const leader = newVehicles[leaderIndex];
 
-      let leaderTargetSpeed = applyingBrake ? 0 : targetSpeed;
+      // Leader dynamics - simple acceleration towards target speed
+      const leaderTargetSpeed = applyingBrake ? 0 : targetSpeed;
+      const speedError = leaderTargetSpeed - leader.velocity;
 
-      if (applyingBrake) {
-        leader.acceleration = -MAX_DECELERATION;
-        leader.velocity = Math.max(0, leader.velocity + leader.acceleration);
-        leader.braking = true;
-      } else {
-        const speedDiff = leaderTargetSpeed - leader.velocity;
-        leader.acceleration = Math.sign(speedDiff) * Math.min(Math.abs(speedDiff) * 0.05, MAX_ACCELERATION);
-        leader.velocity += leader.acceleration;
-        leader.velocity = Math.max(0, leader.velocity);
-      }
+      // Leader acceleration with smooth response
+      leader.acceleration = Math.sign(speedError) * Math.min(Math.abs(speedError) * 0.3, 0.05);
+      leader.velocity += leader.acceleration;
+      leader.velocity = Math.max(0, Math.min(leader.velocity, MAX_SPEED));
 
-      leader.x = 600;
+      // Leader stays at fixed position (for visualization)
+      leader.x = LEADER_BASE_POSITION;
+      leader.braking = leader.acceleration < -0.01;
+
       setLeadVehicleSpeed(leader.velocity);
 
-      const baseDesiredSpacing = useAdaptiveCruise ?
-        (MIN_SPACING + leader.velocity * timeHeadway * SPEED_TO_PIXEL_RATIO) :
-        BASE_SPACING;
-
+      // Follower dynamics with constant time headway control law
       for (let i = leaderIndex - 1; i >= 0; i--) {
         const vehicle = newVehicles[i];
         const leadVehicle = newVehicles[i + 1];
 
-        vehicle.desiredSpacing = baseDesiredSpacing;
+        // Current state
         const actualSpacing = leadVehicle.x - vehicle.x;
+        const desiredSpacing = calculateDesiredSpacing(leadVehicle.velocity);
+        const spacingError = actualSpacing - desiredSpacing;
+        const velocityError = vehicle.velocity - leadVehicle.velocity;
+
+        // Store for display
         vehicle.actualSpacing = actualSpacing;
+        vehicle.desiredSpacing = desiredSpacing;
 
-        const spacingError = actualSpacing - baseDesiredSpacing;
-        const targetSpeed = leadVehicle.velocity + (controllerGain * spacingError);
+        // Control law: u_i = K_p * spacing_error - K_d * velocity_error
+        // Note: spacing_error is positive when too far, so we accelerate (positive control)
+        //       velocity_error is positive when going faster than leader, so we decelerate (negative control)
+        const controlInput = kp * spacingError - kd * velocityError;
 
-        const dragForce = DRAG_COEFFICIENT * vehicle.velocity * vehicle.velocity * Math.sign(vehicle.velocity);
-        let desiredAcceleration = targetSpeed - vehicle.velocity;
-        desiredAcceleration = Math.min(MAX_ACCELERATION, Math.max(-MAX_DECELERATION, desiredAcceleration));
-        vehicle.acceleration = desiredAcceleration - dragForce;
-        vehicle.acceleration += -dampingGain * (vehicle.velocity - leadVehicle.velocity);
+        // Apply control input as acceleration (with saturation)
+        vehicle.acceleration = Math.max(-0.2, Math.min(0.05, controlInput));
 
-        vehicle.velocity += vehicle.acceleration;
-        vehicle.velocity = Math.max(0, vehicle.velocity);
+        // Integrate dynamics: v(t+dt) = v(t) + a*dt
+        vehicle.velocity += vehicle.acceleration * deltaTime;
+        vehicle.velocity = Math.max(0, Math.min(vehicle.velocity, MAX_SPEED));
 
-        vehicle.x = leadVehicle.x - baseDesiredSpacing;
+        // Integrate position: x(t+dt) = x(t) + v*dt
+        vehicle.x += vehicle.velocity * deltaTime;
 
-        if (Math.abs(spacingError) > 5) {
-          vehicle.x += spacingError * 0.1 * -1;
-        }
-
-        vehicle.braking = vehicle.acceleration < -0.05;
-        vehicle.timeHeadway = timeHeadway;
+        // Visual indicator
+        vehicle.braking = vehicle.acceleration < -0.01;
       }
 
+      // Calculate stability score
       const newScore = calculateStabilityScore(newVehicles);
       setStabilityScore(newScore);
 
-      // Update velocity history
+      // Update velocity history (convert to m/s for display)
       setVelocityHistory(prev => {
-        const newHistory = [...prev, newVehicles.map(v => v.velocity)];
+        const newHistory = [...prev, newVehicles.map(v => v.velocity * (1/SPEED_TO_PIXEL_RATIO))];
         return newHistory.slice(-HISTORY_LENGTH);
       });
 
       return newVehicles;
     });
 
+    // Update background elements
     const leaderSpeed = vehicles.length > 0 ? vehicles[vehicles.length - 1].velocity : 0;
-    const foregroundMovement = leaderSpeed * 0.8;
-    const backgroundMovement = leaderSpeed * 0.5;
+    const foregroundMovement = leaderSpeed * deltaTime;
+    const backgroundMovement = leaderSpeed * deltaTime * 0.6;
 
     setElements(prev => {
       return prev.map(el => {
@@ -438,13 +446,17 @@ const EnhancedStringStabilityDemo = () => {
   // Start animation
   const handleStartAnimation = () => {
     const newVehicles = initializeVehicles();
-    const leaderPosition = 600;
     const leaderIndex = VEHICLE_COUNT - 1;
 
-    newVehicles[leaderIndex].x = leaderPosition;
+    // Initialize leader
+    newVehicles[leaderIndex].x = LEADER_BASE_POSITION;
+    newVehicles[leaderIndex].velocity = 0;
 
+    // Initialize followers with proper spacing
+    const initialSpacing = MIN_SPACING + TIME_HEADWAY * 0; // Start with spacing for v=0
     for (let i = leaderIndex - 1; i >= 0; i--) {
-      newVehicles[i].x = newVehicles[i + 1].x - BASE_SPACING;
+      newVehicles[i].x = newVehicles[i + 1].x - initialSpacing;
+      newVehicles[i].velocity = 0;
     }
 
     setElements(generateElements());
@@ -486,7 +498,7 @@ const EnhancedStringStabilityDemo = () => {
         animationRef.current = null;
       }
     };
-  }, [running, timeHeadway, useAdaptiveCruise, controllerGain, dampingGain]);
+  }, [running, kp, kd]);
 
   // Dark mode effect
   useEffect(() => {
@@ -502,27 +514,29 @@ const EnhancedStringStabilityDemo = () => {
   const MetricsDisplay = () => {
     const avgSpacing = vehicles.length > 1 ?
       ((vehicles[vehicles.length-1].x - vehicles[0].x) / (vehicles.length-1)).toFixed(0) :
-      BASE_SPACING;
+      MIN_SPACING;
 
-    const avgDesiredSpacing = vehicles.length > 1 ?
-      (vehicles.slice(0, -1).reduce((sum, v) => sum + v.desiredSpacing, 0) / (vehicles.length - 1)).toFixed(0) :
-      BASE_SPACING;
+    const desiredSpacing = calculateDesiredSpacing(leadVehicleSpeed);
 
     return (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         <div className="bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900 dark:to-blue-800 p-4 rounded-xl shadow-sm">
           <div className="text-xs text-blue-700 dark:text-blue-200 font-medium mb-1">Target Speed</div>
-          <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{targetSpeed.toFixed(1)}</div>
+          <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+            {(targetSpeed * (1/SPEED_TO_PIXEL_RATIO)).toFixed(1)} m/s
+          </div>
         </div>
         <div className="bg-gradient-to-br from-green-100 to-green-50 dark:from-green-900 dark:to-green-800 p-4 rounded-xl shadow-sm">
           <div className="text-xs text-green-700 dark:text-green-200 font-medium mb-1">Leader Speed</div>
-          <div className="text-2xl font-bold text-green-900 dark:text-green-100">{leadVehicleSpeed.toFixed(1)}</div>
+          <div className="text-2xl font-bold text-green-900 dark:text-green-100">
+            {(leadVehicleSpeed * (1/SPEED_TO_PIXEL_RATIO)).toFixed(1)} m/s
+          </div>
         </div>
         <div className="bg-gradient-to-br from-purple-100 to-purple-50 dark:from-purple-900 dark:to-purple-800 p-4 rounded-xl shadow-sm">
           <div className="text-xs text-purple-700 dark:text-purple-200 font-medium mb-1">Avg Spacing</div>
           <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">
-            {avgSpacing}
-            {useAdaptiveCruise && <div className="text-xs font-normal">→ {avgDesiredSpacing}</div>}
+            {avgSpacing}px
+            <div className="text-xs font-normal">d* = {desiredSpacing.toFixed(0)}px</div>
           </div>
         </div>
         <div className="bg-gradient-to-br from-amber-100 to-amber-50 dark:from-amber-900 dark:to-amber-800 p-4 rounded-xl shadow-sm">
@@ -542,7 +556,7 @@ const EnhancedStringStabilityDemo = () => {
             String Stability in Vehicle Platooning
           </h1>
           <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-            Interactive demonstration of adaptive cruise control and string stability in autonomous vehicle platoons
+            Constant time headway policy with predecessor-following control
           </p>
           <div className="mt-4 flex justify-center gap-4 text-sm">
             <a href="https://scholar.google.com/citations?user=MrFi22oAAAAJ" target="_blank" rel="noopener noreferrer"
@@ -559,22 +573,30 @@ const EnhancedStringStabilityDemo = () => {
         {/* Info Panel */}
         {showInfo && (
           <div className="mb-6 p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl">
-            <h3 className="font-bold text-lg mb-3">About String Stability</h3>
-            <p className="mb-3 text-sm">
-              String stability ensures that disturbances in a vehicle platoon (like sudden braking) do not amplify as they propagate
-              through the formation. This is crucial for safe autonomous vehicle operation.
-            </p>
-            <p className="text-sm">
-              <strong>Key Parameters:</strong>
-            </p>
-            <ul className="text-sm list-disc pl-5 space-y-1 mt-2">
-              <li><strong>Position Gain (Kp):</strong> How strongly vehicles correct spacing errors</li>
-              <li><strong>Velocity Gain (Kd):</strong> Damping to prevent oscillations</li>
-              <li><strong>Time Headway (τ):</strong> Desired time gap between vehicles (ACC)</li>
-            </ul>
-            <p className="text-sm mt-3">
-              Try the "Aggressive (Unstable)" preset to see string instability in action!
-            </p>
+            <h3 className="font-bold text-lg mb-3">Control Law & String Stability</h3>
+            <div className="space-y-3 text-sm">
+              <p>
+                <strong>Constant Time Headway Policy:</strong> The desired spacing between vehicles is
+                <code className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded mx-1">
+                  d* = d₀ + τ·v<sub>lead</sub>
+                </code>
+                where d₀ = {MIN_SPACING}px and τ = {TIME_HEADWAY}s (constant).
+              </p>
+              <p>
+                <strong>Control Law:</strong> Each vehicle uses a PD controller:
+                <code className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded mx-1 block mt-1">
+                  u<sub>i</sub> = K<sub>p</sub>·(x<sub>i+1</sub> - x<sub>i</sub> - d*) - K<sub>d</sub>·(v<sub>i</sub> - v<sub>i+1</sub>)
+                </code>
+              </p>
+              <p>
+                <strong>String Stability:</strong> For the platoon to be string stable, disturbances should not amplify
+                as they propagate. The gains K<sub>p</sub> and K<sub>d</sub> must satisfy specific conditions related to
+                the time headway τ.
+              </p>
+              <p className="text-xs mt-3 text-gray-600 dark:text-gray-400">
+                Try the "Aggressive (Unstable)" preset to see string instability - oscillations amplify along the platoon!
+              </p>
+            </div>
           </div>
         )}
 
@@ -610,18 +632,11 @@ const EnhancedStringStabilityDemo = () => {
                 🚨 Emergency Brake
               </button>
             )}
-
-            <button
-              onClick={() => setUseAdaptiveCruise(!useAdaptiveCruise)}
-              className={`px-6 py-3 ${useAdaptiveCruise ? 'bg-gradient-to-r from-green-500 to-green-600' : 'bg-gray-400'} text-white rounded-lg font-medium shadow-md transition-all`}
-            >
-              ACC {useAdaptiveCruise ? 'ON' : 'OFF'}
-            </button>
           </div>
 
           {/* Preset Scenarios */}
           <div className="mb-6">
-            <label className="block text-sm font-medium mb-2">Preset Scenarios:</label>
+            <label className="block text-sm font-medium mb-2">Control Gain Presets:</label>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
               {Object.entries(PRESETS).map(([key, preset]) => (
                 <button
@@ -634,13 +649,15 @@ const EnhancedStringStabilityDemo = () => {
                   }`}
                 >
                   <div className="font-medium text-sm">{preset.name}</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">{preset.description}</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                    Kp={preset.kp}, Kd={preset.kd}
+                  </div>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Parameter Controls */}
+          {/* Control Parameters */}
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
               <label className="w-40 text-sm font-medium">Target Speed:</label>
@@ -653,51 +670,41 @@ const EnhancedStringStabilityDemo = () => {
                 onChange={(e) => setTargetSpeed(parseFloat(e.target.value))}
                 className="flex-1"
               />
-              <span className="w-16 text-right font-mono text-sm">{targetSpeed.toFixed(1)}</span>
-            </div>
-
-            {useAdaptiveCruise && (
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                <label className="w-40 text-sm font-medium">Time Headway (τ):</label>
-                <input
-                  type="range"
-                  min="0.1"
-                  max="3.0"
-                  step="0.1"
-                  value={timeHeadway}
-                  onChange={(e) => setTimeHeadway(parseFloat(e.target.value))}
-                  className="flex-1"
-                />
-                <span className="w-16 text-right font-mono text-sm">{timeHeadway.toFixed(1)}s</span>
-              </div>
-            )}
-
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-              <label className="w-40 text-sm font-medium">Position Gain (Kp):</label>
-              <input
-                type="range"
-                min="0.05"
-                max="0.6"
-                step="0.05"
-                value={controllerGain}
-                onChange={(e) => setControllerGain(parseFloat(e.target.value))}
-                className="flex-1"
-              />
-              <span className="w-16 text-right font-mono text-sm">{controllerGain.toFixed(2)}</span>
+              <span className="w-20 text-right font-mono text-sm">
+                {(targetSpeed * (1/SPEED_TO_PIXEL_RATIO)).toFixed(1)} m/s
+              </span>
             </div>
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-              <label className="w-40 text-sm font-medium">Velocity Gain (Kd):</label>
+              <label className="w-40 text-sm font-medium">Position Gain (K<sub>p</sub>):</label>
               <input
                 type="range"
-                min="0.05"
-                max="0.3"
-                step="0.05"
-                value={dampingGain}
-                onChange={(e) => setDampingGain(parseFloat(e.target.value))}
+                min="0.1"
+                max="2.0"
+                step="0.1"
+                value={kp}
+                onChange={(e) => setKp(parseFloat(e.target.value))}
                 className="flex-1"
               />
-              <span className="w-16 text-right font-mono text-sm">{dampingGain.toFixed(2)}</span>
+              <span className="w-20 text-right font-mono text-sm">{kp.toFixed(1)}</span>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <label className="w-40 text-sm font-medium">Velocity Gain (K<sub>d</sub>):</label>
+              <input
+                type="range"
+                min="0.1"
+                max="1.5"
+                step="0.1"
+                value={kd}
+                onChange={(e) => setKd(parseFloat(e.target.value))}
+                className="flex-1"
+              />
+              <span className="w-20 text-right font-mono text-sm">{kd.toFixed(1)}</span>
+            </div>
+
+            <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded text-xs">
+              <strong>Fixed Parameters:</strong> d₀ = {MIN_SPACING}px, τ = {TIME_HEADWAY}s (constant time headway)
             </div>
           </div>
         </div>
@@ -748,7 +755,6 @@ const EnhancedStringStabilityDemo = () => {
                 color={vehicle.color}
                 velocity={vehicle.velocity}
                 acceleration={vehicle.acceleration}
-                braking={vehicle.braking}
                 desiredSpacing={vehicle.desiredSpacing}
                 actualSpacing={vehicle.actualSpacing}
                 isLeader={index === VEHICLE_COUNT - 1}
@@ -769,49 +775,58 @@ const EnhancedStringStabilityDemo = () => {
 
         {/* Legend and Instructions */}
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
-          <h3 className="font-bold text-lg mb-4">Instructions & Legend</h3>
+          <h3 className="font-bold text-lg mb-4">Mathematical Model</h3>
 
-          <div className="grid md:grid-cols-2 gap-6 text-sm">
-            <div>
-              <h4 className="font-semibold mb-2">How to Use:</h4>
-              <ul className="space-y-2 text-gray-700 dark:text-gray-300">
-                <li>• Click <strong>Start</strong> to begin the simulation</li>
-                <li>• Try different <strong>preset scenarios</strong> to see varying behaviors</li>
-                <li>• Adjust <strong>control gains</strong> to fine-tune the response</li>
-                <li>• Press <strong>Emergency Brake</strong> to test platoon response</li>
-                <li>• Watch the <strong>Stability Score</strong> - higher is better!</li>
-              </ul>
+          <div className="space-y-4 text-sm">
+            <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <p className="font-semibold mb-2">Dynamics:</p>
+              <code className="block">
+                ẍ<sub>i</sub> = u<sub>i</sub>
+              </code>
+              <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                Each vehicle's acceleration equals its control input (unit mass assumed)
+              </p>
             </div>
 
-            <div>
-              <h4 className="font-semibold mb-2">Visual Indicators:</h4>
-              <ul className="space-y-2 text-gray-700 dark:text-gray-300">
-                <li className="flex items-center gap-2">
-                  <span className="inline-block w-3 h-3 rounded-full bg-green-500"></span>
-                  <span>Optimal spacing</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="inline-block w-3 h-3 rounded-full bg-red-500"></span>
-                  <span>Too close (unsafe)</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="inline-block w-3 h-3 rounded-full bg-blue-500"></span>
-                  <span>Too far (inefficient)</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="inline-block w-4 h-2 bg-red-600"></span>
-                  <span>Brake lights (decelerating)</span>
-                </li>
-              </ul>
+            <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <p className="font-semibold mb-2">Control Law (Predecessor-Following):</p>
+              <code className="block">
+                u<sub>i</sub> = K<sub>p</sub>·(x<sub>i+1</sub> - x<sub>i</sub> - d*) - K<sub>d</sub>·(ẋ<sub>i</sub> - ẋ<sub>i+1</sub>)
+              </code>
+              <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                d* = {MIN_SPACING} + {TIME_HEADWAY}·ẋ<sub>i+1</sub> (constant time headway policy)
+              </p>
             </div>
-          </div>
 
-          <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-sm">
-            <p className="text-gray-700 dark:text-gray-300">
-              <strong>Research Context:</strong> This demo illustrates key concepts from control systems theory applied to vehicle platooning.
-              String stability is achieved when disturbances don't amplify along the platoon. With Adaptive Cruise Control (ACC),
-              spacing adjusts based on velocity using: <code className="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded">d = d_min + τ·v</code>
-            </p>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <h4 className="font-semibold mb-2">Visual Indicators:</h4>
+                <ul className="space-y-2 text-gray-700 dark:text-gray-300">
+                  <li className="flex items-center gap-2">
+                    <span className="inline-block w-3 h-3 rounded-full bg-green-500"></span>
+                    <span>Optimal spacing (|error| &lt; 10px)</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="inline-block w-3 h-3 rounded-full bg-red-500"></span>
+                    <span>Too close (collision risk)</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="inline-block w-3 h-3 rounded-full bg-blue-500"></span>
+                    <span>Too far (inefficient)</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="font-semibold mb-2">Interpreting Results:</h4>
+                <ul className="space-y-2 text-gray-700 dark:text-gray-300 text-xs">
+                  <li>• <strong>String stable:</strong> Velocity oscillations decay along platoon</li>
+                  <li>• <strong>String unstable:</strong> Oscillations amplify (see "Aggressive" preset)</li>
+                  <li>• <strong>Higher K<sub>p</sub>:</strong> Faster response, risk of oscillations</li>
+                  <li>• <strong>Higher K<sub>d</sub>:</strong> More damping, smoother response</li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
 
