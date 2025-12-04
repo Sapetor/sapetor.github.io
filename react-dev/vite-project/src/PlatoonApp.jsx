@@ -1,8 +1,9 @@
-import { Play, Pause, RotateCcw, Settings, Info, Zap, ChevronDown, ChevronUp, HelpCircle, TrendingUp, Activity } from 'lucide-react';
-import React, { useState, useEffect, useRef } from 'react';
+import { Play, Pause, RotateCcw, Settings, Info, Zap, ChevronDown, ChevronUp, HelpCircle, TrendingUp, Activity, Radio, CloudRain, Cloud, Sun, Gauge, Fuel, AlertTriangle, Keyboard, Users, FastForward, Map } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 // Constants
-const VEHICLE_COUNT = 6;
+const MAX_VEHICLE_COUNT = 10;
+const MIN_VEHICLE_COUNT = 2;
 const LEADER_BASE_POSITION = 650;
 const MAX_SPEED = 30; // m/s (108 km/h)
 const MIN_SPEED = 0;
@@ -14,6 +15,21 @@ const MIN_SPACING = 5; // meters - minimum safety distance
 const DEFAULT_TIME_HEADWAY = 1.2; // seconds
 const VEHICLE_TIME_CONSTANT = 0.3; // seconds - actuator lag
 const DT = 1/60; // 60 fps
+
+// Collision threshold
+const COLLISION_THRESHOLD = 3; // meters - warn when closer than this
+
+// Fuel consumption model (simplified)
+const FUEL_IDLE_RATE = 0.5; // L/100km equivalent at idle
+const FUEL_ACCEL_FACTOR = 0.15; // Additional fuel per m/s² acceleration
+
+// Weather effects on vehicle dynamics
+const WEATHER_EFFECTS = {
+  clear: { friction: 1.0, visibility: 1.0, brakeEfficiency: 1.0 },
+  rain: { friction: 0.7, visibility: 0.7, brakeEfficiency: 0.75 },
+  fog: { friction: 0.9, visibility: 0.4, brakeEfficiency: 0.9 },
+  storm: { friction: 0.5, visibility: 0.5, brakeEfficiency: 0.6 }
+};
 
 // Scenario presets
 const SCENARIOS = {
@@ -70,31 +86,48 @@ const SCENARIOS = {
     kp: 0.3,
     kd: 1.0,
     eventSequence: []
+  },
+  highSpeed: {
+    name: "High Speed",
+    description: "Fast highway driving at 100+ km/h",
+    targetSpeed: 28,
+    tau: 1.5,
+    kp: 0.5,
+    kd: 1.2,
+    eventSequence: []
   }
 };
 
 // Vehicle types with different characteristics
 const VEHICLE_TYPES = [
-  { name: 'sedan', length: 4.5, color: 'blue', maxAccel: 3.0 },
-  { name: 'suv', length: 5.0, color: 'red', maxAccel: 2.5 },
-  { name: 'truck', length: 6.0, color: 'orange', maxAccel: 2.0 },
-  { name: 'sports', length: 4.2, color: 'purple', maxAccel: 4.0 },
+  { name: 'sedan', length: 4.5, color: 'blue', maxAccel: 3.0, fuelEfficiency: 1.0 },
+  { name: 'suv', length: 5.0, color: 'red', maxAccel: 2.5, fuelEfficiency: 1.3 },
+  { name: 'truck', length: 6.0, color: 'orange', maxAccel: 2.0, fuelEfficiency: 1.8 },
+  { name: 'sports', length: 4.2, color: 'purple', maxAccel: 4.0, fuelEfficiency: 1.5 },
+  { name: 'electric', length: 4.6, color: 'green', maxAccel: 3.5, fuelEfficiency: 0.3 },
+  { name: 'compact', length: 3.8, color: 'cyan', maxAccel: 2.8, fuelEfficiency: 0.8 },
 ];
 
+// Playback speeds
+const PLAYBACK_SPEEDS = [0.25, 0.5, 1, 2, 4];
+
 // Initialize vehicles with CACC
-const initializeVehicles = () => {
-  return Array(VEHICLE_COUNT).fill(0).map((_, i) => ({
+const initializeVehicles = (count) => {
+  return Array(count).fill(0).map((_, i) => ({
     id: i,
     position: 0, // meters
     velocity: 0, // m/s
     acceleration: 0, // m/s²
     desiredAcceleration: 0,
-    color: `hsl(${(i * 360 / VEHICLE_COUNT + 200)}, 75%, 55%)`,
-    isLeader: i === VEHICLE_COUNT - 1,
+    color: `hsl(${(i * 360 / count + 200)}, 75%, 55%)`,
+    isLeader: i === count - 1,
     type: VEHICLE_TYPES[i % VEHICLE_TYPES.length],
     controlInput: 0,
     spacingError: 0,
-    velocityError: 0
+    velocityError: 0,
+    fuelConsumed: 0, // liters
+    communicating: false, // V2V communication state
+    lastCommTime: 0
   }));
 };
 
@@ -167,7 +200,7 @@ const generateScenery = () => {
 };
 
 // Cloud Component
-const Cloud = ({ x, y, scale, isDarkMode }) => (
+const CloudShape = ({ x, y, scale, isDarkMode }) => (
   <g transform={`translate(${x}, ${y}) scale(${scale})`} opacity="0.7">
     <ellipse cx="0" cy="0" rx="25" ry="12" fill={isDarkMode ? "#e0e7ff" : "#fff"} />
     <ellipse cx="-15" cy="2" rx="18" ry="10" fill={isDarkMode ? "#e0e7ff" : "#fff"} />
@@ -250,10 +283,244 @@ const RoadSign = ({ x, y, isDarkMode }) => (
   </g>
 );
 
+// Rain Effect Component
+const RainEffect = ({ intensity }) => {
+  const drops = [];
+  const dropCount = intensity * 100;
+
+  for (let i = 0; i < dropCount; i++) {
+    drops.push(
+      <line
+        key={i}
+        x1={Math.random() * 1200}
+        y1={Math.random() * 400}
+        x2={Math.random() * 1200 + 10}
+        y2={Math.random() * 400 + 20}
+        stroke="#60a5fa"
+        strokeWidth="1"
+        opacity={0.3 + Math.random() * 0.3}
+      >
+        <animate
+          attributeName="y1"
+          from={-20}
+          to={420}
+          dur={`${0.5 + Math.random() * 0.5}s`}
+          repeatCount="indefinite"
+        />
+        <animate
+          attributeName="y2"
+          from={0}
+          to={440}
+          dur={`${0.5 + Math.random() * 0.5}s`}
+          repeatCount="indefinite"
+        />
+      </line>
+    );
+  }
+
+  return <g className="rain-effect">{drops}</g>;
+};
+
+// Fog Effect Component
+const FogEffect = ({ intensity }) => (
+  <g>
+    <rect
+      x="0"
+      y="0"
+      width="1200"
+      height="400"
+      fill="#fff"
+      opacity={intensity * 0.5}
+    />
+    {[0, 100, 200, 300].map(y => (
+      <ellipse
+        key={y}
+        cx="600"
+        cy={y}
+        rx="800"
+        ry="60"
+        fill="#e5e7eb"
+        opacity={intensity * 0.4}
+      >
+        <animate
+          attributeName="cx"
+          values="600;650;600;550;600"
+          dur="8s"
+          repeatCount="indefinite"
+        />
+      </ellipse>
+    ))}
+  </g>
+);
+
+// V2V Communication Visualization
+const V2VCommunication = ({ vehicles, cameraOffset, showV2V }) => {
+  if (!showV2V || vehicles.length < 2) return null;
+
+  return (
+    <g>
+      {vehicles.slice(0, -1).map((vehicle, index) => {
+        const nextVehicle = vehicles[index + 1];
+        const x1 = (vehicle.position - cameraOffset) * PIXELS_PER_METER + 600;
+        const x2 = (nextVehicle.position - cameraOffset) * PIXELS_PER_METER + 600;
+        const midX = (x1 + x2) / 2;
+
+        return (
+          <g key={`v2v-${vehicle.id}`}>
+            {/* Communication arc */}
+            <path
+              d={`M ${x1} -30 Q ${midX} -80 ${x2} -30`}
+              fill="none"
+              stroke="#22d3ee"
+              strokeWidth="2"
+              strokeDasharray="5,5"
+              opacity="0.6"
+            >
+              <animate
+                attributeName="stroke-dashoffset"
+                from="0"
+                to="10"
+                dur="0.5s"
+                repeatCount="indefinite"
+              />
+            </path>
+
+            {/* Pulse animation at endpoints */}
+            <circle cx={x1} cy="-30" r="4" fill="#22d3ee">
+              <animate
+                attributeName="r"
+                values="4;8;4"
+                dur="1s"
+                repeatCount="indefinite"
+              />
+              <animate
+                attributeName="opacity"
+                values="0.8;0.2;0.8"
+                dur="1s"
+                repeatCount="indefinite"
+              />
+            </circle>
+
+            {/* Data packet animation */}
+            <circle r="3" fill="#22d3ee">
+              <animateMotion
+                path={`M ${x1 - 600} -30 Q ${midX - 600} -80 ${x2 - 600} -30`}
+                dur="0.8s"
+                repeatCount="indefinite"
+              />
+            </circle>
+
+            {/* Radio icon */}
+            <g transform={`translate(${midX}, -75)`}>
+              <circle r="10" fill="#0e7490" opacity="0.8" />
+              <text x="0" y="4" textAnchor="middle" fill="#fff" fontSize="10">📡</text>
+            </g>
+          </g>
+        );
+      })}
+    </g>
+  );
+};
+
+// Collision Warning Component
+const CollisionWarning = ({ vehicles, isDarkMode }) => {
+  const collisions = [];
+
+  for (let i = 0; i < vehicles.length - 1; i++) {
+    const spacing = vehicles[i + 1].position - vehicles[i].position;
+    if (spacing < COLLISION_THRESHOLD) {
+      collisions.push({
+        vehicle1: i,
+        vehicle2: i + 1,
+        spacing,
+        severity: spacing < 1 ? 'critical' : 'warning'
+      });
+    }
+  }
+
+  if (collisions.length === 0) return null;
+
+  return (
+    <div className={`fixed top-4 right-4 z-50 ${isDarkMode ? 'bg-red-900' : 'bg-red-100'} border-2 border-red-500 rounded-xl p-4 shadow-2xl animate-pulse`}>
+      <div className="flex items-center gap-2 text-red-600 font-bold">
+        <AlertTriangle size={24} />
+        <span>COLLISION WARNING</span>
+      </div>
+      {collisions.map((c, i) => (
+        <div key={i} className={`text-sm mt-2 ${c.severity === 'critical' ? 'text-red-600 font-bold' : 'text-orange-600'}`}>
+          Vehicles {c.vehicle1 + 1} ↔ {c.vehicle2 + 1}: {c.spacing.toFixed(1)}m
+          {c.severity === 'critical' && ' ⚠️ CRITICAL'}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// Mini-map Component
+const MiniMap = ({ vehicles, isDarkMode, cameraOffset }) => {
+  if (vehicles.length === 0) return null;
+
+  const minPos = Math.min(...vehicles.map(v => v.position)) - 20;
+  const maxPos = Math.max(...vehicles.map(v => v.position)) + 20;
+  const range = maxPos - minPos;
+  const scale = 180 / Math.max(range, 100);
+
+  return (
+    <div className={`${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'} border rounded-lg p-2 shadow-lg`}>
+      <div className="text-xs font-semibold mb-1 flex items-center gap-1">
+        <Map size={12} /> Platoon Overview
+      </div>
+      <svg width="200" height="40" className="rounded">
+        <rect width="200" height="40" fill={isDarkMode ? '#374151' : '#f3f4f6'} />
+
+        {/* Road */}
+        <rect x="0" y="15" width="200" height="10" fill={isDarkMode ? '#1f2937' : '#4b5563'} rx="2" />
+
+        {/* Viewport indicator */}
+        <rect
+          x={10 + ((cameraOffset - minPos) * scale) - 30}
+          y="0"
+          width="60"
+          height="40"
+          fill="#3b82f6"
+          opacity="0.2"
+          rx="4"
+        />
+
+        {/* Vehicles */}
+        {vehicles.map((vehicle, i) => {
+          const x = 10 + (vehicle.position - minPos) * scale;
+          return (
+            <g key={vehicle.id}>
+              <rect
+                x={x - 4}
+                y="17"
+                width="8"
+                height="6"
+                fill={vehicle.color}
+                rx="1"
+              />
+              {vehicle.isLeader && (
+                <circle cx={x} cy="12" r="3" fill="#fbbf24" />
+              )}
+            </g>
+          );
+        })}
+
+        {/* Scale indicator */}
+        <text x="180" y="38" textAnchor="end" fill={isDarkMode ? '#9ca3af' : '#6b7280'} fontSize="8">
+          {range.toFixed(0)}m
+        </text>
+      </svg>
+    </div>
+  );
+};
+
 // Enhanced Vehicle Component with detailed design
-const VehicleComponent = ({ vehicle, isDarkMode, pixelX, showDetails, showSpacingLine, nextVehicle }) => {
+const VehicleComponent = ({ vehicle, isDarkMode, pixelX, showDetails, showSpacingLine, nextVehicle, weather }) => {
   const isAccelerating = vehicle.acceleration > 0.5;
   const isBraking = vehicle.acceleration < -0.5;
+  const weatherEffect = WEATHER_EFFECTS[weather];
 
   return (
     <g>
@@ -289,6 +556,11 @@ const VehicleComponent = ({ vehicle, isDarkMode, pixelX, showDetails, showSpacin
         {/* Vehicle shadow */}
         <ellipse cx="0" cy="25" rx="35" ry="8" fill="#000" opacity="0.2" />
 
+        {/* Wet road reflection when raining */}
+        {(weather === 'rain' || weather === 'storm') && (
+          <ellipse cx="0" cy="28" rx="30" ry="5" fill={vehicle.color} opacity="0.15" />
+        )}
+
         {/* Speed lines when moving fast */}
         {vehicle.velocity > 15 && (
           <g opacity="0.4">
@@ -319,9 +591,9 @@ const VehicleComponent = ({ vehicle, isDarkMode, pixelX, showDetails, showSpacin
           </radialGradient>
         </defs>
 
-        {/* Headlight beams when accelerating */}
-        {isAccelerating && vehicle.velocity > 5 && (
-          <ellipse cx="50" cy="0" rx="70" ry="25" fill={`url(#headlight-${vehicle.id})`} opacity="0.3" />
+        {/* Headlight beams when accelerating or in low visibility */}
+        {(isAccelerating && vehicle.velocity > 5) || weatherEffect.visibility < 0.8 && (
+          <ellipse cx="50" cy="0" rx="70" ry="25" fill={`url(#headlight-${vehicle.id})`} opacity={weatherEffect.visibility < 0.8 ? 0.5 : 0.3} />
         )}
 
         {/* Main body with shine effect */}
@@ -353,6 +625,14 @@ const VehicleComponent = ({ vehicle, isDarkMode, pixelX, showDetails, showSpacin
           <circle cx="18" cy="12" r="7" fill="#1a1a1a" />
           <circle cx="18" cy="12" r="4" fill="#4a5568" />
           <circle cx="18" cy="12" r="2" fill="#718096" />
+
+          {/* Spray when on wet road */}
+          {(weather === 'rain' || weather === 'storm') && vehicle.velocity > 5 && (
+            <>
+              <ellipse cx="-25" cy="15" rx="8" ry="4" fill="#9ca3af" opacity="0.3" />
+              <ellipse cx="25" cy="15" rx="8" ry="4" fill="#9ca3af" opacity="0.3" />
+            </>
+          )}
         </g>
 
         {/* Front grille */}
@@ -362,8 +642,8 @@ const VehicleComponent = ({ vehicle, isDarkMode, pixelX, showDetails, showSpacin
         <rect x="28" y="3" width="4" height="2" fill="#333" />
 
         {/* Headlights with glow */}
-        <circle cx="30" cy="-6" r="3" fill={isAccelerating ? "#ffeb3b" : "#fff9c4"} opacity={isAccelerating ? 1 : 0.7} />
-        <circle cx="30" cy="6" r="3" fill={isAccelerating ? "#ffeb3b" : "#fff9c4"} opacity={isAccelerating ? 1 : 0.7} />
+        <circle cx="30" cy="-6" r="3" fill={(isAccelerating || weatherEffect.visibility < 0.8) ? "#ffeb3b" : "#fff9c4"} opacity={(isAccelerating || weatherEffect.visibility < 0.8) ? 1 : 0.7} />
+        <circle cx="30" cy="6" r="3" fill={(isAccelerating || weatherEffect.visibility < 0.8) ? "#ffeb3b" : "#fff9c4"} opacity={(isAccelerating || weatherEffect.visibility < 0.8) ? 1 : 0.7} />
 
         {/* Brake lights with intensity */}
         <rect x="-31" y="-7" width="3" height="5" fill={isBraking ? "#ef4444" : "#7f1d1d"} rx="1"
@@ -426,6 +706,13 @@ const VehicleComponent = ({ vehicle, isDarkMode, pixelX, showDetails, showSpacin
               {vehicle.acceleration > 0 ? '↑' : '↓'} {Math.abs(vehicle.acceleration).toFixed(1)} m/s²
             </text>
           </g>
+        )}
+
+        {/* Vehicle ID */}
+        {showDetails && (
+          <text x="0" y="-55" textAnchor="middle" fill={isDarkMode ? '#9ca3af' : '#6b7280'} fontSize="9">
+            #{vehicle.id + 1}
+          </text>
         )}
       </g>
     </g>
@@ -505,7 +792,7 @@ const RealtimeChart = ({ title, data, maxDataPoints, yLabel, isDarkMode, colors,
               key={vehicleIdx}
               points={points}
               fill="none"
-              stroke={colors[vehicleIdx] || `hsl(${(vehicleIdx * 360 / VEHICLE_COUNT)}, 70%, 50%)`}
+              stroke={colors[vehicleIdx] || `hsl(${(vehicleIdx * 360 / colors.length)}, 70%, 50%)`}
               strokeWidth="2"
               opacity="0.8"
             />
@@ -527,7 +814,6 @@ const StringStabilityIndicator = ({ vehicles, isDarkMode }) => {
   if (vehicles.length < 3) return null;
 
   // Calculate amplification ratio (compare first and last follower velocity variance)
-  const leader = vehicles[vehicles.length - 1];
   const velocities = vehicles.slice(0, -1).map(v => v.velocity);
 
   const avgVel = velocities.reduce((a, b) => a + b, 0) / velocities.length;
@@ -573,6 +859,115 @@ const StringStabilityIndicator = ({ vehicles, isDarkMode }) => {
   );
 };
 
+// Fuel Efficiency Component
+const FuelEfficiencyPanel = ({ vehicles, simulationTime, isDarkMode }) => {
+  if (vehicles.length === 0 || simulationTime < 1) return null;
+
+  const totalFuel = vehicles.reduce((sum, v) => sum + v.fuelConsumed, 0);
+  const totalDistance = vehicles.reduce((sum, v) => sum + v.position, 0) / 1000; // km
+  const avgEfficiency = totalDistance > 0.01 ? (totalFuel / totalDistance) * 100 : 0; // L/100km
+
+  // CO2 emissions (approx 2.3 kg CO2 per liter of fuel)
+  const co2Emissions = totalFuel * 2.3;
+
+  return (
+    <div className={`p-4 rounded-xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+      <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
+        <Fuel size={16} />
+        Energy Efficiency
+      </h3>
+      <div className="grid grid-cols-2 gap-3 text-xs">
+        <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+          <div className="opacity-75">Total Fuel</div>
+          <div className="font-bold text-lg">{totalFuel.toFixed(2)} L</div>
+        </div>
+        <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+          <div className="opacity-75">Efficiency</div>
+          <div className="font-bold text-lg">{avgEfficiency.toFixed(1)} L/100km</div>
+        </div>
+        <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-green-900/30' : 'bg-green-50'}`}>
+          <div className="opacity-75">CO₂ Saved*</div>
+          <div className="font-bold text-lg text-green-600">{(co2Emissions * 0.15).toFixed(1)} kg</div>
+        </div>
+        <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+          <div className="opacity-75">Distance</div>
+          <div className="font-bold text-lg">{(totalDistance / vehicles.length).toFixed(2)} km</div>
+        </div>
+      </div>
+      <div className="text-xs opacity-50 mt-2">*Estimated savings vs non-platooning</div>
+    </div>
+  );
+};
+
+// Keyboard Shortcuts Panel
+const KeyboardShortcuts = ({ isDarkMode, onClose }) => (
+  <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50`} onClick={onClose}>
+    <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-2xl p-6 max-w-md shadow-2xl`} onClick={e => e.stopPropagation()}>
+      <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+        <Keyboard size={20} /> Keyboard Shortcuts
+      </h3>
+      <div className="space-y-2 text-sm">
+        {[
+          ['Space', 'Start/Pause simulation'],
+          ['R', 'Reset simulation'],
+          ['E', 'Emergency brake (hold)'],
+          ['↑ / ↓', 'Increase/decrease speed'],
+          ['← / →', 'Adjust time headway'],
+          ['1-6', 'Select scenario preset'],
+          ['V', 'Toggle V2V visualization'],
+          ['D', 'Toggle vehicle details'],
+          ['C', 'Toggle charts'],
+          ['M', 'Toggle mini-map'],
+          ['W', 'Cycle weather'],
+          ['?', 'Toggle this help']
+        ].map(([key, desc]) => (
+          <div key={key} className="flex items-center gap-3">
+            <kbd className={`px-2 py-1 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'} font-mono text-xs min-w-[40px] text-center`}>
+              {key}
+            </kbd>
+            <span>{desc}</span>
+          </div>
+        ))}
+      </div>
+      <button
+        onClick={onClose}
+        className={`mt-4 w-full py-2 rounded-lg ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'} transition-colors`}
+      >
+        Close
+      </button>
+    </div>
+  </div>
+);
+
+// Weather Selector Component
+const WeatherSelector = ({ weather, setWeather, isDarkMode }) => {
+  const weatherOptions = [
+    { id: 'clear', icon: Sun, label: 'Clear' },
+    { id: 'rain', icon: CloudRain, label: 'Rain' },
+    { id: 'fog', icon: Cloud, label: 'Fog' },
+    { id: 'storm', icon: CloudRain, label: 'Storm' }
+  ];
+
+  return (
+    <div className="flex gap-1">
+      {weatherOptions.map(({ id, icon: Icon, label }) => (
+        <button
+          key={id}
+          onClick={() => setWeather(id)}
+          className={`p-2 rounded-lg transition-all ${
+            weather === id
+              ? 'bg-blue-500 text-white'
+              : isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+          }`}
+          title={label}
+        >
+          <Icon size={16} />
+        </button>
+      ))}
+    </div>
+  );
+};
+
 // Main Platoon App
 const PlatoonApp = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -596,6 +991,14 @@ const PlatoonApp = () => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [selectedScenario, setSelectedScenario] = useState('normal');
   const [emergencyBrake, setEmergencyBrake] = useState(false);
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+
+  // New features state
+  const [vehicleCount, setVehicleCount] = useState(6);
+  const [weather, setWeather] = useState('clear');
+  const [showV2V, setShowV2V] = useState(true);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [showMiniMap, setShowMiniMap] = useState(true);
 
   // Data history for charts
   const [velocityHistory, setVelocityHistory] = useState([]);
@@ -614,6 +1017,86 @@ const PlatoonApp = () => {
     darkModeMediaQuery.addEventListener('change', handler);
     return () => darkModeMediaQuery.removeEventListener('change', handler);
   }, []);
+
+  // Keyboard controls
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ignore if typing in an input
+      if (e.target.tagName === 'INPUT') return;
+
+      switch (e.key.toLowerCase()) {
+        case ' ':
+          e.preventDefault();
+          if (running) handleStop();
+          else handleStart();
+          break;
+        case 'r':
+          handleReset();
+          break;
+        case 'e':
+          setEmergencyBrake(true);
+          break;
+        case 'arrowup':
+          e.preventDefault();
+          setTargetSpeed(s => Math.min(MAX_SPEED, s + 1));
+          break;
+        case 'arrowdown':
+          e.preventDefault();
+          setTargetSpeed(s => Math.max(MIN_SPEED, s - 1));
+          break;
+        case 'arrowleft':
+          e.preventDefault();
+          setTimeHeadway(t => Math.max(0.5, t - 0.1));
+          break;
+        case 'arrowright':
+          e.preventDefault();
+          setTimeHeadway(t => Math.min(3.0, t + 0.1));
+          break;
+        case '1': case '2': case '3': case '4': case '5': case '6':
+          const scenarios = Object.keys(SCENARIOS);
+          const idx = parseInt(e.key) - 1;
+          if (idx < scenarios.length && !running) {
+            applyScenario(scenarios[idx]);
+          }
+          break;
+        case 'v':
+          setShowV2V(v => !v);
+          break;
+        case 'd':
+          setShowDetails(d => !d);
+          break;
+        case 'c':
+          setShowCharts(c => !c);
+          break;
+        case 'm':
+          setShowMiniMap(m => !m);
+          break;
+        case 'w':
+          setWeather(w => {
+            const weathers = ['clear', 'rain', 'fog', 'storm'];
+            const idx = weathers.indexOf(w);
+            return weathers[(idx + 1) % weathers.length];
+          });
+          break;
+        case '?':
+          setShowKeyboardHelp(h => !h);
+          break;
+      }
+    };
+
+    const handleKeyUp = (e) => {
+      if (e.key.toLowerCase() === 'e') {
+        setEmergencyBrake(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [running]);
 
   // Apply scenario
   const applyScenario = (scenarioKey) => {
@@ -642,10 +1125,14 @@ const PlatoonApp = () => {
     }
   };
 
-  // CACC Control Law
+  // CACC Control Law with weather effects
   const calculateCACCAcceleration = (vehicle, leaderVehicle) => {
+    const weatherEffect = WEATHER_EFFECTS[weather];
     const actualSpacing = leaderVehicle.position - vehicle.position;
-    const desiredSpacing = MIN_SPACING + timeHeadway * vehicle.velocity;
+
+    // Increase desired spacing in bad weather
+    const weatherSpacingMultiplier = 1 + (1 - weatherEffect.visibility) * 0.5;
+    const desiredSpacing = (MIN_SPACING + timeHeadway * vehicle.velocity) * weatherSpacingMultiplier;
     const spacingError = actualSpacing - desiredSpacing;
     const velocityError = vehicle.velocity - leaderVehicle.velocity;
 
@@ -661,15 +1148,19 @@ const PlatoonApp = () => {
     const controlInput = kp * spacingError - kd * velocityError;
     vehicle.controlInput = controlInput;
 
-    // Clamp to realistic acceleration limits
-    return Math.max(-8, Math.min(3, controlInput));
+    // Apply weather effects to braking
+    const maxBrake = -8 * weatherEffect.brakeEfficiency;
+    const maxAccel = 3 * weatherEffect.friction;
+
+    return Math.max(maxBrake, Math.min(maxAccel, controlInput));
   };
 
   // Animation loop
-  const updateSimulation = (timestamp) => {
+  const updateSimulation = useCallback((timestamp) => {
     if (!running) return;
 
-    const deltaTime = lastTimeRef.current ? Math.min((timestamp - lastTimeRef.current) / 1000, 0.1) : DT;
+    const baseTime = lastTimeRef.current ? Math.min((timestamp - lastTimeRef.current) / 1000, 0.1) : DT;
+    const deltaTime = baseTime * playbackSpeed;
     lastTimeRef.current = timestamp;
 
     setSimulationTime(prev => {
@@ -680,13 +1171,16 @@ const PlatoonApp = () => {
 
     setVehicles(prev => {
       const newVehicles = [...prev];
-      const leaderIndex = VEHICLE_COUNT - 1;
+      const leaderIndex = vehicleCount - 1;
       const leader = newVehicles[leaderIndex];
 
+      if (!leader) return prev;
+
       // Leader follows target speed with smooth acceleration
+      const weatherEffect = WEATHER_EFFECTS[weather];
       const leaderTargetSpeed = emergencyBrake ? 0 : targetSpeed;
       const speedError = leaderTargetSpeed - leader.velocity;
-      leader.desiredAcceleration = Math.sign(speedError) * Math.min(Math.abs(speedError) * 2, 3);
+      leader.desiredAcceleration = Math.sign(speedError) * Math.min(Math.abs(speedError) * 2, 3 * weatherEffect.friction);
 
       // First-order actuator dynamics for leader
       const accelError = leader.desiredAcceleration - leader.acceleration;
@@ -695,6 +1189,10 @@ const PlatoonApp = () => {
       // Update leader velocity and position
       leader.velocity = Math.max(0, Math.min(MAX_SPEED, leader.velocity + leader.acceleration * deltaTime));
       leader.position += leader.velocity * deltaTime;
+
+      // Update fuel consumption for leader
+      const leaderFuelRate = FUEL_IDLE_RATE + Math.max(0, leader.acceleration) * FUEL_ACCEL_FACTOR;
+      leader.fuelConsumed += (leaderFuelRate / 100) * leader.velocity * deltaTime / 1000 * leader.type.fuelEfficiency;
 
       // Update followers with CACC
       for (let i = leaderIndex - 1; i >= 0; i--) {
@@ -711,6 +1209,10 @@ const PlatoonApp = () => {
         // Update velocity and position
         vehicle.velocity = Math.max(0, Math.min(MAX_SPEED, vehicle.velocity + vehicle.acceleration * deltaTime));
         vehicle.position += vehicle.velocity * deltaTime;
+
+        // Update fuel consumption
+        const fuelRate = FUEL_IDLE_RATE + Math.max(0, vehicle.acceleration) * FUEL_ACCEL_FACTOR;
+        vehicle.fuelConsumed += (fuelRate / 100) * vehicle.velocity * deltaTime / 1000 * vehicle.type.fuelEfficiency;
       }
 
       return newVehicles;
@@ -718,8 +1220,10 @@ const PlatoonApp = () => {
 
     // Update camera to follow leader smoothly
     if (vehicles.length > 0) {
-      const leader = vehicles[VEHICLE_COUNT - 1];
-      setCameraOffset(prev => prev + (leader.position - prev) * 0.1);
+      const leader = vehicles[vehicleCount - 1];
+      if (leader) {
+        setCameraOffset(prev => prev + (leader.position - prev) * 0.1);
+      }
     }
 
     // Update data history
@@ -742,16 +1246,16 @@ const PlatoonApp = () => {
     }
 
     animationRef.current = requestAnimationFrame(updateSimulation);
-  };
+  }, [running, kp, kd, timeHeadway, targetSpeed, emergencyBrake, vehicleCount, weather, playbackSpeed, vehicles, simulationTime]);
 
   // Start simulation
   const handleStart = () => {
-    const newVehicles = initializeVehicles();
+    const newVehicles = initializeVehicles(vehicleCount);
     const initialSpacing = MIN_SPACING + timeHeadway * 0;
 
     // Position vehicles
-    for (let i = VEHICLE_COUNT - 1; i >= 0; i--) {
-      if (i === VEHICLE_COUNT - 1) {
+    for (let i = vehicleCount - 1; i >= 0; i--) {
+      if (i === vehicleCount - 1) {
         newVehicles[i].position = 0;
       } else {
         newVehicles[i].position = newVehicles[i + 1].position - initialSpacing;
@@ -802,10 +1306,20 @@ const PlatoonApp = () => {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [running, kp, kd, timeHeadway, targetSpeed, emergencyBrake]);
+  }, [running, updateSimulation]);
+
+  const weatherEffect = WEATHER_EFFECTS[weather];
 
   return (
     <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gradient-to-br from-blue-50 via-white to-purple-50 text-gray-900'}`}>
+      {/* Collision Warning */}
+      <CollisionWarning vehicles={vehicles} isDarkMode={isDarkMode} />
+
+      {/* Keyboard Help Modal */}
+      {showKeyboardHelp && (
+        <KeyboardShortcuts isDarkMode={isDarkMode} onClose={() => setShowKeyboardHelp(false)} />
+      )}
+
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         {/* Header */}
         <div className="text-center mb-6">
@@ -814,6 +1328,9 @@ const PlatoonApp = () => {
           </h1>
           <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300">
             Cooperative Adaptive Cruise Control with String Stability Analysis
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
+            Press <kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs">?</kbd> for keyboard shortcuts
           </p>
         </div>
 
@@ -874,13 +1391,71 @@ const PlatoonApp = () => {
             </button>
           </div>
 
+          {/* Quick Controls Row */}
+          <div className="flex flex-wrap gap-4 justify-center items-center mb-4">
+            {/* Vehicle Count */}
+            <div className="flex items-center gap-2">
+              <Users size={16} />
+              <span className="text-sm font-medium">Vehicles:</span>
+              <select
+                value={vehicleCount}
+                onChange={(e) => setVehicleCount(parseInt(e.target.value))}
+                disabled={running}
+                className={`px-3 py-1 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'} ${running ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                {Array.from({length: MAX_VEHICLE_COUNT - MIN_VEHICLE_COUNT + 1}, (_, i) => i + MIN_VEHICLE_COUNT).map(n => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Weather */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Weather:</span>
+              <WeatherSelector weather={weather} setWeather={setWeather} isDarkMode={isDarkMode} />
+            </div>
+
+            {/* Playback Speed */}
+            <div className="flex items-center gap-2">
+              <FastForward size={16} />
+              <span className="text-sm font-medium">Speed:</span>
+              <select
+                value={playbackSpeed}
+                onChange={(e) => setPlaybackSpeed(parseFloat(e.target.value))}
+                className={`px-3 py-1 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}
+              >
+                {PLAYBACK_SPEEDS.map(s => (
+                  <option key={s} value={s}>{s}x</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Toggle buttons */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowV2V(!showV2V)}
+                className={`p-2 rounded-lg transition-all ${showV2V ? 'bg-cyan-500 text-white' : isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}
+                title="Toggle V2V Communication"
+              >
+                <Radio size={16} />
+              </button>
+              <button
+                onClick={() => setShowMiniMap(!showMiniMap)}
+                className={`p-2 rounded-lg transition-all ${showMiniMap ? 'bg-blue-500 text-white' : isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}
+                title="Toggle Mini-map"
+              >
+                <Map size={16} />
+              </button>
+            </div>
+          </div>
+
           {/* Tutorial Overlay */}
           {showTutorial && (
             <div className={`mb-4 p-4 md:p-6 rounded-xl ${isDarkMode ? 'bg-blue-900/30 border-blue-700' : 'bg-blue-50 border-blue-200'} border-2`}>
               <h3 className="text-lg md:text-xl font-bold mb-3 flex items-center gap-2">
                 <Info size={20} /> Quick Tutorial
               </h3>
-              <div className="grid md:grid-cols-2 gap-4 text-sm">
+              <div className="grid md:grid-cols-3 gap-4 text-sm">
                 <div>
                   <h4 className="font-semibold mb-2">🎮 Controls:</h4>
                   <ul className="space-y-1 list-disc ml-5">
@@ -899,6 +1474,15 @@ const PlatoonApp = () => {
                     <li><strong>Blue dots:</strong> Too far (inefficient)</li>
                   </ul>
                 </div>
+                <div>
+                  <h4 className="font-semibold mb-2">🆕 New Features:</h4>
+                  <ul className="space-y-1 list-disc ml-5">
+                    <li><strong>V2V:</strong> Vehicle communication visualization</li>
+                    <li><strong>Weather:</strong> Affects braking & visibility</li>
+                    <li><strong>Fuel:</strong> Energy efficiency tracking</li>
+                    <li><strong>Keyboard:</strong> Press ? for shortcuts</li>
+                  </ul>
+                </div>
               </div>
             </div>
           )}
@@ -908,8 +1492,8 @@ const PlatoonApp = () => {
             <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
               <Activity size={16} /> Scenario Presets
             </h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
-              {Object.entries(SCENARIOS).map(([key, scenario]) => (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+              {Object.entries(SCENARIOS).map(([key, scenario], idx) => (
                 <button
                   key={key}
                   onClick={() => applyScenario(key)}
@@ -922,7 +1506,9 @@ const PlatoonApp = () => {
                       : 'bg-gray-100 hover:bg-gray-200'
                   } ${running ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  <div className="font-bold text-xs md:text-sm">{scenario.name}</div>
+                  <div className="font-bold text-xs md:text-sm flex items-center gap-1">
+                    <kbd className="text-xs opacity-60">{idx + 1}</kbd> {scenario.name}
+                  </div>
                   <div className={`text-xs mt-1 ${selectedScenario === key ? 'text-blue-100' : 'opacity-75'}`}>
                     {scenario.description}
                   </div>
@@ -1005,6 +1591,21 @@ const PlatoonApp = () => {
                 <p className="mt-1"><strong>Control Law:</strong> a = K<sub>p</sub>·(d<sub>actual</sub> - d<sub>desired</sub>) - K<sub>d</sub>·(v<sub>ego</sub> - v<sub>leader</sub>)</p>
               </div>
 
+              {/* Weather Effects Info */}
+              {weather !== 'clear' && (
+                <div className={`mt-4 p-4 ${isDarkMode ? 'bg-yellow-900/30' : 'bg-yellow-50'} rounded-lg text-sm border ${isDarkMode ? 'border-yellow-800' : 'border-yellow-200'}`}>
+                  <p className="font-semibold flex items-center gap-2">
+                    <AlertTriangle size={16} className="text-yellow-500" />
+                    Weather Effects Active
+                  </p>
+                  <p className="mt-1 opacity-75">
+                    Friction: {(weatherEffect.friction * 100).toFixed(0)}% |
+                    Visibility: {(weatherEffect.visibility * 100).toFixed(0)}% |
+                    Brake Efficiency: {(weatherEffect.brakeEfficiency * 100).toFixed(0)}%
+                  </p>
+                </div>
+              )}
+
               {/* Display Options */}
               <div className="mt-4 flex flex-wrap gap-4">
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -1034,20 +1635,29 @@ const PlatoonApp = () => {
                   />
                   <span className="text-sm font-medium">Show charts</span>
                 </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showV2V}
+                    onChange={(e) => setShowV2V(e.target.checked)}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm font-medium">Show V2V communication</span>
+                </label>
               </div>
             </div>
           )}
 
           {/* Info Display */}
           {running && vehicles.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3">
               <div className={`${isDarkMode ? 'bg-gradient-to-br from-blue-900 to-blue-800' : 'bg-gradient-to-br from-blue-100 to-blue-50'} p-3 rounded-xl`}>
                 <div className="text-xs font-semibold opacity-75 mb-1">Leader Speed</div>
                 <div className="text-xl md:text-2xl font-bold">
-                  {vehicles[VEHICLE_COUNT - 1].velocity.toFixed(1)} m/s
+                  {vehicles[vehicleCount - 1]?.velocity.toFixed(1) || '0.0'} m/s
                 </div>
                 <div className="text-xs opacity-75">
-                  {(vehicles[VEHICLE_COUNT - 1].velocity * 3.6).toFixed(0)} km/h
+                  {((vehicles[vehicleCount - 1]?.velocity || 0) * 3.6).toFixed(0)} km/h
                 </div>
               </div>
 
@@ -1055,7 +1665,7 @@ const PlatoonApp = () => {
                 <div className="text-xs font-semibold opacity-75 mb-1">Avg Spacing</div>
                 <div className="text-xl md:text-2xl font-bold">
                   {vehicles.length > 1
-                    ? ((vehicles[VEHICLE_COUNT-1].position - vehicles[0].position) / (VEHICLE_COUNT-1)).toFixed(1)
+                    ? ((vehicles[vehicleCount-1].position - vehicles[0].position) / (vehicleCount-1)).toFixed(1)
                     : '0.0'} m
                 </div>
               </div>
@@ -1069,23 +1679,48 @@ const PlatoonApp = () => {
                 <div className="text-xs font-semibold opacity-75 mb-1">Sim Time</div>
                 <div className="text-xl md:text-2xl font-bold">{simulationTime.toFixed(1)}s</div>
               </div>
+
+              <div className={`${isDarkMode ? 'bg-gradient-to-br from-cyan-900 to-cyan-800' : 'bg-gradient-to-br from-cyan-100 to-cyan-50'} p-3 rounded-xl`}>
+                <div className="text-xs font-semibold opacity-75 mb-1 flex items-center gap-1">
+                  {weather === 'clear' && <Sun size={12} />}
+                  {weather === 'rain' && <CloudRain size={12} />}
+                  {weather === 'fog' && <Cloud size={12} />}
+                  {weather === 'storm' && <CloudRain size={12} />}
+                  Weather
+                </div>
+                <div className="text-xl md:text-2xl font-bold capitalize">{weather}</div>
+              </div>
             </div>
           )}
         </div>
 
+        {/* Mini-map */}
+        {showMiniMap && running && (
+          <div className="absolute top-4 left-4 z-40">
+            <MiniMap vehicles={vehicles} isDarkMode={isDarkMode} cameraOffset={cameraOffset} />
+          </div>
+        )}
+
         {/* Animation Canvas */}
-        <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-2 rounded-2xl overflow-hidden shadow-2xl mb-4`}>
+        <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-2 rounded-2xl overflow-hidden shadow-2xl mb-4 relative`}>
+          {/* Mini-map overlay */}
+          {showMiniMap && running && vehicles.length > 0 && (
+            <div className="absolute top-2 left-2 z-10">
+              <MiniMap vehicles={vehicles} isDarkMode={isDarkMode} cameraOffset={cameraOffset} />
+            </div>
+          )}
+
           <svg width="100%" height="400" viewBox="0 0 1200 400" preserveAspectRatio="xMidYMid meet">
             {/* Sky gradient */}
             <defs>
               <linearGradient id="sky-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" style={{stopColor: isDarkMode ? '#1e3a8a' : '#60a5fa', stopOpacity: 1}} />
-                <stop offset="50%" style={{stopColor: isDarkMode ? '#1e40af' : '#93c5fd', stopOpacity: 1}} />
-                <stop offset="100%" style={{stopColor: isDarkMode ? '#312e81' : '#dbeafe', stopOpacity: 1}} />
+                <stop offset="0%" style={{stopColor: isDarkMode ? '#1e3a8a' : weather === 'storm' ? '#374151' : '#60a5fa', stopOpacity: 1}} />
+                <stop offset="50%" style={{stopColor: isDarkMode ? '#1e40af' : weather === 'storm' ? '#4b5563' : '#93c5fd', stopOpacity: 1}} />
+                <stop offset="100%" style={{stopColor: isDarkMode ? '#312e81' : weather === 'storm' ? '#6b7280' : '#dbeafe', stopOpacity: 1}} />
               </linearGradient>
               <linearGradient id="road-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" style={{stopColor: '#4b5563', stopOpacity: 1}} />
-                <stop offset="100%" style={{stopColor: '#1f2937', stopOpacity: 1}} />
+                <stop offset="0%" style={{stopColor: weather === 'rain' || weather === 'storm' ? '#374151' : '#4b5563', stopOpacity: 1}} />
+                <stop offset="100%" style={{stopColor: weather === 'rain' || weather === 'storm' ? '#1f2937' : '#1f2937', stopOpacity: 1}} />
               </linearGradient>
             </defs>
 
@@ -1093,8 +1728,12 @@ const PlatoonApp = () => {
             <rect width="1200" height="250" fill="url(#sky-gradient)" />
 
             {/* Sun/Moon */}
-            <circle cx="1000" cy="80" r="40" fill={isDarkMode ? '#fbbf24' : '#fef08a'} opacity={isDarkMode ? 0.6 : 0.9} />
-            {!isDarkMode && <circle cx="990" cy="75" r="35" fill="#fef9c3" opacity="0.5" />}
+            {weather === 'clear' && (
+              <>
+                <circle cx="1000" cy="80" r="40" fill={isDarkMode ? '#fbbf24' : '#fef08a'} opacity={isDarkMode ? 0.6 : 0.9} />
+                {!isDarkMode && <circle cx="990" cy="75" r="35" fill="#fef9c3" opacity="0.5" />}
+              </>
+            )}
 
             {/* Scenery elements - mountains, clouds */}
             {scenery.filter(e => e.type === 'mountain').map(element => {
@@ -1103,10 +1742,10 @@ const PlatoonApp = () => {
               return <Mountain key={element.id} x={screenX} y={element.y} scale={element.scale} height={element.height} isDarkMode={isDarkMode} />;
             })}
 
-            {scenery.filter(e => e.type === 'cloud').map(element => {
+            {weather === 'clear' && scenery.filter(e => e.type === 'cloud').map(element => {
               const screenX = (element.x - cameraOffset * element.speed) % 4000;
               if (screenX < -100 || screenX > 1300) return null;
-              return <Cloud key={element.id} x={screenX} y={element.y} scale={element.scale} isDarkMode={isDarkMode} />;
+              return <CloudShape key={element.id} x={screenX} y={element.y} scale={element.scale} isDarkMode={isDarkMode} />;
             })}
 
             {/* Ground */}
@@ -1115,6 +1754,11 @@ const PlatoonApp = () => {
 
             {/* Road */}
             <rect y="280" width="1200" height="120" fill="url(#road-gradient)" />
+
+            {/* Wet road effect */}
+            {(weather === 'rain' || weather === 'storm') && (
+              <rect y="280" width="1200" height="120" fill="#60a5fa" opacity="0.1" />
+            )}
 
             {/* Road markings */}
             {Array.from({length: 20}, (_, i) => (
@@ -1151,11 +1795,16 @@ const PlatoonApp = () => {
               return null;
             })}
 
+            {/* V2V Communication */}
+            <g transform="translate(0, 340)">
+              <V2VCommunication vehicles={vehicles} cameraOffset={cameraOffset} showV2V={showV2V} />
+            </g>
+
             {/* Vehicles */}
             <g transform="translate(0, 340)">
               {vehicles.map((vehicle, index) => {
                 const screenX = (vehicle.position - cameraOffset) * PIXELS_PER_METER + 600;
-                const nextVehicle = index < VEHICLE_COUNT - 1 ? vehicles[index + 1] : null;
+                const nextVehicle = index < vehicleCount - 1 ? vehicles[index + 1] : null;
 
                 return (
                   <VehicleComponent
@@ -1166,16 +1815,22 @@ const PlatoonApp = () => {
                     showDetails={showDetails}
                     showSpacingLine={showSpacingLines}
                     nextVehicle={nextVehicle}
+                    weather={weather}
                   />
                 );
               })}
             </g>
+
+            {/* Weather effects overlay */}
+            {weather === 'rain' && <RainEffect intensity={0.5} />}
+            {weather === 'storm' && <RainEffect intensity={1.0} />}
+            {weather === 'fog' && <FogEffect intensity={0.6} />}
           </svg>
         </div>
 
         {/* String Stability and Charts */}
         {running && showCharts && vehicles.length > 0 && (
-          <div className="grid md:grid-cols-2 gap-4 mb-4">
+          <div className="grid md:grid-cols-3 gap-4 mb-4">
             <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} p-4 rounded-xl shadow-lg`}>
               <StringStabilityIndicator vehicles={vehicles} isDarkMode={isDarkMode} />
 
@@ -1216,6 +1871,11 @@ const PlatoonApp = () => {
                 />
               </div>
             </div>
+
+            {/* Fuel Efficiency Panel */}
+            <div>
+              <FuelEfficiencyPanel vehicles={vehicles} simulationTime={simulationTime} isDarkMode={isDarkMode} />
+            </div>
           </div>
         )}
 
@@ -1225,7 +1885,7 @@ const PlatoonApp = () => {
             <Info size={20} /> About CACC & String Stability
           </h3>
 
-          <div className="grid md:grid-cols-2 gap-4 md:gap-6 text-sm">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 text-sm">
             <div>
               <h4 className="font-semibold mb-2">Cooperative Adaptive Cruise Control</h4>
               <p className="mb-2">
@@ -1265,6 +1925,10 @@ const PlatoonApp = () => {
                   <span className="w-4 h-4 rounded-full bg-red-500"></span>
                   <span>Too close - safety risk</span>
                 </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-4 h-4 rounded-full bg-cyan-500"></span>
+                  <span>V2V communication active</span>
+                </li>
               </ul>
             </div>
 
@@ -1275,7 +1939,10 @@ const PlatoonApp = () => {
                 <li>• Observe velocity oscillations in charts</li>
                 <li>• Test emergency braking response</li>
                 <li>• Adjust Kp and Kd to see stability effects</li>
-                <li>• Watch spacing lines during acceleration/braking</li>
+                <li>• Try different weather conditions</li>
+                <li>• Watch V2V communication visualization</li>
+                <li>• Compare fuel efficiency across scenarios</li>
+                <li>• Use keyboard shortcuts for quick control</li>
               </ul>
             </div>
           </div>
