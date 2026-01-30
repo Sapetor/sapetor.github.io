@@ -584,7 +584,7 @@ arxiv={2403.11043}},
 @article{villenas2023kalman,
   title = {A Kalman-based compensation strategy for platoons subject to data loss: Numerical and empirical study},
   author = {Villenas, Felipe I and Vargas, Francisco J and Peters, Andr{\'e}s A},
-  journal = {Mathemxwatics},
+  journal = {Mathematics},
   volume = {11},
   number = {5},
   pages = {1228},
@@ -594,4 +594,18 @@ arxiv={2403.11043}},
   abstract = {This article considers a homogeneous platoon with vehicles that communicate through channels prone to data loss. The vehicles use a predecessor-following topology, where each vehicle sends relevant data to the next, and data loss is modeled through a Bernoulli process. To address the lossy communication, we propose a strategy to estimate the missing data based on the Kalman filter with intermittent observations combined with a linear extrapolation stage. This strategy enables the followers to better deal with data dropouts. We compare this approach to one purely based on the linear extrapolation of previous data. The performance of both strategies is analyzed through Monte Carlo simulations and experiments in an ad hoc testbed, considering various data loss and transmission loss probabilities depending on the inter-vehicle distance. The results show that for the considered cases, the proposed strategy outperforms the linear extrapolation approach in terms of tracking and estimation error variances. Our results also show that the proposed strategy can achieve string stability for the mean and variance for both the tracking and estimation errors in scenarios where the basic extrapolation strategy cannot.},
   bibtex_show = {true},
   google_scholar_id = {pqnbT2bcN3wC}
+}
+
+@article{wang2025fundamental,
+  title = {Fundamental Limit on Time Headway for String Stability of Vehicular Platooning},
+  author = {Wang, Miaomiao and Yan, Yamin and Wu, Wuwei and Vargas, Francisco J and Peters, Andr{\'e}s A and Chen, Jie},
+  journal = {IFAC-PapersOnLine},
+  volume = {59},
+  number = {13},
+  pages = {147--152},
+  year = {2025},
+  publisher = {Elsevier},
+  doi = {10.1016/j.ifacol.2025.10.026},
+  abstract = {In perhaps the simplest and most economical vehicle platoon control strategy, known as the predecessor-follower topology, time headway is the enabling and in fact the sole means to control inter-vehicle spacing by controlling vehicle speed relative to inter-vehicle distance. While it is desirable to maintain a small time headway to decrease road capacity usage, there is a limit to it in order to ensure the string stability of the platoon and hence secure vehicle safety; string stability is referred to as the property that disturbances are not amplified when propagating through the platoon. This paper provides an analytical expression of the fundamental lower bound to the time headway allowable to ensure string stability in the predecessor-follower platooning topology. The paper also analyzes the tracking performance of the vehicle system, presenting an explicit expression of the best achievable tracking error measured under an energy criterion.},
+  bibtex_show = {true}
 }
