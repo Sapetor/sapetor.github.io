@@ -2,100 +2,39 @@
 layout: page
 title: PL-TOON Platform
 description: A Low-Cost Experimental Platform for Vehicle Formation Control
-img: assets/img/pl-toon/platform.jpg
+img: assets/img/pl-toon/platform.png
 importance: 1
 category: work
 ---
 
-PL-TOON (Programmable Low-cost Train platOON) is an innovative experimental platform designed for research and education in vehicle formation control and platooning.
-
-<div class="row">
-    <div class="col-sm mt-3 mt-md-0">
-        {% include figure.liquid loading="eager" path="assets/img/pl-toon/overview.jpg" title="PL-TOON Platform Overview" class="img-fluid rounded z-depth-1" %}
-    </div>
-    <div class="col-sm mt-3 mt-md-0">
-        {% include figure.liquid loading="eager" path="assets/img/pl-toon/vehicles.jpg" title="Autonomous Vehicles" class="img-fluid rounded z-depth-1" %}
-    </div>
-    <div class="col-sm mt-3 mt-md-0">
-        {% include figure.liquid loading="eager" path="assets/img/pl-toon/control.jpg" title="Control Interface" class="img-fluid rounded z-depth-1" %}
-    </div>
-</div>
-<div class="caption">
-    Left: The complete PL-TOON experimental setup. Middle: Individual autonomous vehicles in formation. Right: Real-time control and monitoring interface.
-</div>
-
-## Key Features
-
-The platform provides a cost-effective solution for validating theoretical results in formation control, string stability, and multi-agent systems. It combines hardware and software components to create a flexible research environment.
+PL-TOON (Programmable Low-cost Train platOON) is an experimental platform for research and teaching in vehicle formation control and platooning. It has been used in courses at UTFSM, UTEM, and UAI since 2020.
 
 <div class="row justify-content-sm-center">
     <div class="col-sm-8 mt-3 mt-md-0">
-        {% include figure.liquid path="assets/img/pl-toon/demo.jpg" title="Platform Demo" class="img-fluid rounded z-depth-1" %}
-    </div>
-    <div class="col-sm-4 mt-3 mt-md-0">
-        {% include figure.liquid path="assets/img/pl-toon/architecture.jpg" title="System Architecture" class="img-fluid rounded z-depth-1" %}
+        {% include figure.liquid loading="eager" path="assets/img/pl-toon/platform.png" title="PL-TOON Platform" class="img-fluid rounded z-depth-1" %}
     </div>
 </div>
-<div class="caption">
-    Left: Platform demonstration during an experiment. Right: System architecture diagram showing the communication and control structure.
-</div>
 
-### Hardware Components
+## Hardware
 
-- Custom-designed chassis and track system
-- ESP32-based control units
-- Infrared sensors for position detection
-- Wireless communication modules
-- DC motors with encoders
+- Model trains driven by 9 V DC motors on a 3D-printed chassis
+- One WiFi-capable microcontroller (ESP32) per train, with sensors, battery, and drive circuitry
+- Each train measures its own velocity and the distance to its predecessor
 
-### Software Architecture
+## Software and Communication
 
-- Arduino-compatible firmware
-- Python-based control interface
-- Real-time data visualization
-- Open-source codebase
+- Local PID control loops on each microcontroller
+- Decentralized communication between trains over MQTT
+- Wireless supervision, data acquisition, and on-the-fly parameter configuration
+- A phone-based laboratory mode in which each train hosts its own web dashboard, so a lab session needs no laptop
 
-<div class="row">
-    <div class="col-sm mt-3 mt-md-0">
-        {% include figure.liquid path="assets/img/pl-toon/results.jpg" title="Experimental Results" class="img-fluid rounded z-depth-1" %}
-    </div>
-</div>
-<div class="caption">
-    Sample experimental results showing vehicle formation performance and string stability analysis.
-</div>
+## Research and Teaching Use
 
-## Research Applications
+- Experimental validation of string stability and formation control results for one-dimensional platoons
+- Remote and in-person control laboratories for undergraduate courses
 
-The platform has been successfully used in various research projects:
+## Resources
 
-1. **String Stability Analysis**
+The code is open source: [github.com/pl-toon/pl-toon-codes](https://github.com/pl-toon/pl-toon-codes).
 
-   - Validation of theoretical stability conditions
-   - Testing of different communication protocols
-   - Performance evaluation under delays
-
-2. **Formation Control**
-   - Implementation of various control strategies
-   - Testing of adaptive algorithms
-   - Validation of theoretical results
-
-<div class="row">
-    <div class="col-12 mt-3 mt-md-0">
-        {% include figure.liquid path="assets/img/pl-toon/applications.jpg" title="Research Applications" class="img-fluid rounded z-depth-1" %}
-    </div>
-</div>
-<div class="caption">
-    Different research applications of the PL-TOON platform, from basic formation control to complex multi-vehicle coordination.
-</div>
-
-## Resources and Documentation
-
-All platform resources are open-source and available through our [GitHub repository](https://github.com/pl-toon/pl-toon-codes). This includes:
-
-- Technical documentation
-- Setup guides
-- Example code
-- Research data
-- Educational materials
-
-For more information about getting involved with the project, contact [andres.peters@uai.cl](mailto:andres.peters@uai.cl).
+For more information, contact [andres.peters@uai.cl](mailto:andres.peters@uai.cl).

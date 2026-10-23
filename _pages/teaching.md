@@ -7,20 +7,22 @@ nav: true
 nav_order: 5
 ---
 
-## Current Teaching at UAI (2025)
+## Current Teaching at UAI (2026)
 
 ### Graduate Courses
 
-- Modeling and Control of Multi-agent Systems and Applications in Complex Systems
+- Advanced Control and Data-Driven Decision Systems
 
 ### Undergraduate Courses
 
-- Fundamentals of Electrical Engineering
+- MIN215 Simulation, Automation and Mechatronics
 
 ## Other Past Courses
 
 ### Universidad Adolfo Ibáñez (2021-2025)
 
+- Modeling and Control of Multi-agent Systems and Applications in Complex Systems (graduate)
+- Fundamentals of Electrical Engineering
 - Simulation, Automation and Mechatronics
 - Differential Equations
 - Applied Electronics Fundamentals

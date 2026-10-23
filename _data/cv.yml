@@ -4,7 +4,7 @@
     - name: Full Name
       value: Andrés Alejandro Peters Rivas
     - name: Current Position
-      value: Assistant Professor (UAI)
+      value: Associate Professor (UAI)
     - name: Faculty/School
       value: Faculty of Engineering and Sciences
     - name: Languages
@@ -35,7 +35,7 @@
 - title: Academic Experience
   type: time_table
   contents:
-    - title: Assistant Professor
+    - title: Assistant Professor, then Associate Professor
       institution: Universidad Adolfo Ibáñez (UAI)
       year: 2021 - Present
     - title: Researcher and Instructor
@@ -48,6 +48,12 @@
 - title: Research Projects
   type: time_table
   contents:
+    - title: Characterizing the Effects of Lossy Links in Cooperative Control and Parameter Estimation of Vehicular Platoons
+      role: Principal Investigator
+      funding: Fondecyt Regular 1251406 (ANID)
+      year: 2025 - 2029
+      description:
+        - Lossy links in cooperative navigation and cooperative parameter estimation for vehicle platoons
     - title: Decentralized Formation Control of Multi-Agent Systems
       role: Principal Investigator
       funding: Fondecyt Iniciation (ANID)

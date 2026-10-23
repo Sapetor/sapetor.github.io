@@ -155,7 +155,7 @@
   organization = {IEEE}
 }
 
-@article{gordon2021comparison,
+@article{gordon2021simple,
   title = {Comparison of simple strategies for vehicular platooning with lossy communication},
   author = {Gordon, Marco A and Vargas, Francisco J and Peters, Andr{\'e}s A},
   journal = {IEEE Access},
@@ -201,12 +201,14 @@
   google_scholar_id = {cFHS6HbyZ2cC}
 }
 
-@article{maass2024stochastic,
-  title = {Stochastic Lp string stability analysis in predecessor-following platoons under packet losses,
-arxiv={2403.11043}},
-  author = {Maass, Alejandro I and Vargas, Francisco J and Peters, Andres A and Yuz, Juan I},
-  journal = {arXiv preprint arXiv:2403.11043},
-  year = {2024},
+@article{maass2026expectation,
+  title = {Expectation-based string stability of predecessor-following platoons over lossy channels},
+  author = {Maass, Alejandro I. and Vargas, Francisco J. and Peters, Andr{\'e}s A. and Yuz, Juan I.},
+  journal = {Automatica},
+  year = {2026},
+  note = {Accepted for publication. Preprint of an earlier version: arXiv:2403.11043},
+  arxiv = {2403.11043},
+  abstract = {In this paper, we study (homogeneous) predecessor-following platoons in which the vehicle-to-vehicle (V2V) communications are affected by random packet losses. We model the overall platoon as a stochastic hybrid system and analyse its string stability via a small-gain approach. For nonlinear platoons, we illustrate how the different elements of the platoon have an impact on string stability, such as platoon topology and vehicle scheduling. For linear time-invariant platoons, we provide an explicit string stability condition that illustrates the interplay between the channel success probability, transmission rate, and time headway constant. Lastly, we illustrate our results by numerical simulations.},
   bibtex_show = {true}
 }
 
@@ -608,4 +610,87 @@ arxiv={2403.11043}},
   doi = {10.1016/j.ifacol.2025.10.026},
   abstract = {In perhaps the simplest and most economical vehicle platoon control strategy, known as the predecessor-follower topology, time headway is the enabling and in fact the sole means to control inter-vehicle spacing by controlling vehicle speed relative to inter-vehicle distance. While it is desirable to maintain a small time headway to decrease road capacity usage, there is a limit to it in order to ensure the string stability of the platoon and hence secure vehicle safety; string stability is referred to as the property that disturbances are not amplified when propagating through the platoon. This paper provides an analytical expression of the fundamental lower bound to the time headway allowable to ensure string stability in the predecessor-follower platooning topology. The paper also analyzes the tracking performance of the vehicle system, presenting an explicit expression of the best achievable tracking error measured under an energy criterion.},
   bibtex_show = {true}
+}
+
+@article{leon2026bad,
+  title = {Bad Designs by Good Talkers: Chatbots Failing to Architect Audio Encoders for Image Synthesis},
+  author = {Le{\'o}n, Jorge E. and Carrasco, Miguel and Peters, Andr{\'e}s A.},
+  journal = {IEEE Access},
+  volume = {14},
+  pages = {34436--34457},
+  year = {2026},
+  doi = {10.1109/access.2026.3668130},
+  abstract = {On one hand, recent advances in chatbots have led to a rising popularity in using these models for coding tasks. On the other hand, modern generative image models primarily rely on text encoders to translate semantic concepts into visual representations, even when there is clear evidence that audio can be employed as input as well. Given the previous, in this work, we explore whether state-of-the-art conversational agents can design effective audio encoders to replace the CLIP text encoder from Stable Diffusion 1.5, enabling image synthesis directly from sound. We prompted five publicly available chatbots (namely, ChatGPT o3-mini, Claude 3.7 Sonnet, DeepSeek-R1, Gemini 2.5 Pro Preview 03-25, and Grok 3) to propose neural architectures to work as these audio encoders, with a set of well-explained shared conditions. Each valid suggested encoder was trained on over two million context-related audio–image–text observations, and evaluated on held-out validation and test sets using various metrics, together with a qualitative analysis of their generated images. Although almost all chatbots generated valid model designs, none achieved satisfactory results, indicating that their audio embeddings failed to align reliably with those of the original text encoder. Among the proposals, the Gemini audio encoder showed the best quantitative metrics, while the Grok audio encoder produced more coherent images (particularly, when paired with the text encoder). Our findings reveal a shared architectural bias across chatbots and underscore the remaining coding gap that needs to be bridged in future versions of these models. We also created a public demo so everyone could study and try out these audio encoders. Finally, we propose research questions that should be tackled in the future, and encourage other researchers to perform more focused and highly specialized tasks like this one, so the respective chatbots cannot make use of well-known solutions and their creativity/reasoning is fully put to the test.},
+  bibtex_show = {true}
+}
+
+@article{aguilera2026expected,
+  title = {Expected String Stability of Human-Led Vehicle Platoons under Stochastic Communication Delays (Full Version)},
+  author = {Aguilera, Francisco and Jaque, V{\'i}ctor and Peters, Andr{\'e}s A. and Maass, Alejandro I.},
+  journal = {arXiv preprint arXiv:2606.06406},
+  year = {2026},
+  doi = {10.48550/arxiv.2606.06406},
+  eprint = {2606.06406},
+  archivePrefix = {arXiv},
+  abstract = {This paper studies expected $\mathcal{L}_2$ string stability of event-triggered vehicle platoons in which a human driver leads a chain of cooperatively controlled autonomous followers under stochastic communication delays. The leader's driving behavior propagates through the string via vehicle-to-vehicle (V2V) communication, so human-induced disturbances must not amplify along the platoon. Unlike deterministic approaches based on worst-case delay bounds, we derive string-stability conditions depending on the full delay distribution through integral inequalities. The closed-loop platoon is modeled as a stochastic hybrid system capturing vehicle dynamics, communication events, and event-triggering. This framework certifies string stability even when delays exceed deterministic admissible bounds with nonzero probability. Results are evaluated under several delay distributions using the MATLAB HyEQ simulator.},
+  bibtex_show = {true}
+}
+
+@inproceedings{escobar2026string,
+  title = {String Stabilization of Predecessor-Following Vehicle Platoons Using Linear Quadratic Integral Control},
+  author = {Escobar, Carlos M. and Severino, Luis A. and Gordon, Marco A. and Peters, Andr{\'e}s A. and Vargas, Francisco J.},
+  booktitle = {2026 12th International Conference on Control, Decision and Information Technologies (CoDIT)},
+  pages = {3407--3412},
+  year = {2026},
+  doi = {10.1109/codit70676.2026.11630730},
+  bibtex_show = {true},
+  organization = {IEEE}
+}
+
+@inproceedings{escobar2025linear,
+  title = {Linear Quadratic Integral Control with Double Integrator for Platooning System: A Numerical Study of String Stability},
+  author = {Escobar, Carlos and Severino, Luis and Ram{\'i}rez, H{\'e}ctor and Peters, Andr{\'e}s and Vargas, Francisco},
+  booktitle = {2025 IEEE CHILEAN Conference on Electrical, Electronics Engineering, Information and Communication Technologies (CHILECON)},
+  pages = {1--6},
+  year = {2025},
+  doi = {10.1109/chilecon66915.2025.11476060},
+  abstract = {In this work, we study string stability in vehicle platoons based on linear quadratic integral control (LQI). We focus on platoons modeled as continuous time LTI systems under a predecessor-following configuration with a time headway spacing policy. To ensure zero steady-state tracking error, we employ the LQI technique with double integration. Through numerical simulations, we show the relationship between the time headway constant and the weighting matrices of the LQI cost functional and how these design parameters affect string stab},
+  bibtex_show = {true},
+  organization = {IEEE}
+}
+
+@inproceedings{carvajal2025adaptive,
+  title = {Adaptive Tuning of a Proportional Integral Controller Using a Transformer Network},
+  author = {Carvajal, Ignacio and Peters, Andr{\'e}s},
+  booktitle = {2025 15th IEEE International Conference on Pattern Recognition Systems (ICPRS)},
+  pages = {1--7},
+  year = {2025},
+  doi = {10.1109/icprs66293.2025.11302849},
+  abstract = {The tuning of gains in Proportional-Integral (PI) controllers is a fundamental challenge in industrial automation, particularly when systems experience changes in their dynamics. This work proposes a solution based on artificial intelligence to address this challenge, combining classical control methods with deep neural networks such as Transformers leveraging attention mechanisms. A dataset is generated using the classical Pole Placement method, adjusting PI controller parameters in response to changes in the dynamics of a first-order system. This dataset serves as the foundation for training a deep neural network based on the Transformer architecture, specifically a TabTransformer, which learns to predict the appropriate PI controller gains (Kpand Ti) based on the system’s features and dynamics. Results suggest that the proposed approach shows promise compared to standard neural networks, obtaining R2values of 0.9866 for Kpand 0.9979 for Tiprediction.},
+  bibtex_show = {true},
+  organization = {IEEE}
+}
+
+@inproceedings{sanhueza2025string,
+  title = {String Stability for Predecessor-Leader Following Platoons with Additive Noise Channels},
+  author = {Sanhueza, Fernando and Gordon, Marco and Wang, Miaomiao and Chen, Jie and Peters, Andr{\'e}s and Vargas, Francisco},
+  booktitle = {2025 IEEE 64th Conference on Decision and Control (CDC)},
+  pages = {3369--3374},
+  year = {2025},
+  doi = {10.1109/cdc57313.2025.11312047},
+  abstract = {This article studies vehicle platoons whose communication is affected by additive noise. A predecessor-leader topology is considered, with additive noises affecting both communication channels. A control law is implemented that weights the importance of leader-following and predecessor-following tasks through a weighting parameter. Given this setup, a characterization of the second order statistics of the platoon is obtained, and also conditions are derived for ℒp-mean ℒq-variance string stability and also for mean-square string stability. Numerical examples are also provided to illustrate our findings.},
+  bibtex_show = {true},
+  organization = {IEEE}
+}
+
+@inproceedings{maass2024string,
+  title = {String stability for predecessor-following platoons over channels with heterogeneous reception probabilities},
+  author = {Maass, Alejandro I. and Vargas, Francisco J. and Peters, Andr{\'e}s A.},
+  booktitle = {2024 IEEE 63rd Conference on Decision and Control (CDC)},
+  pages = {927--933},
+  year = {2024},
+  doi = {10.1109/cdc56724.2024.10886883},
+  abstract = {We study predecessor-following platoons in which each vehicle-to-vehicle (V2V) communication is affected by a different probability of successful transmission. We model the overall platoon as a stochastic hybrid system, and analyse its stochastic ${\mathcal{L}}_{2}$ string stability via a small-gain approach. We provide an explicit string stability condition that illustrates the interplay between the channel success probabilities, transmission rate, and time headway constant. We illustrate our findings through numerical simulations.},
+  bibtex_show = {true},
+  organization = {IEEE}
 }

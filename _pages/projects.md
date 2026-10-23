@@ -2,10 +2,10 @@
 layout: page
 title: projects
 permalink: /projects/
-description: WIP.
+description: Experimental platforms for research and teaching in multi-agent control
 nav: true
 nav_order: 3
-display_categories: [work, fun]
+display_categories: [work]
 horizontal: false
 ---
 

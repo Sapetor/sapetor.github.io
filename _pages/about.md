@@ -49,7 +49,7 @@ schema_markup: >
     "alternateName": ["Andres Peters", "Andres A. Peters", "A. Peters", "Peters, Andres"],
     "givenName": "Andrés",
     "familyName": "Peters",
-    "jobTitle": ["Associate Professor", "Director of Computer Engineering BSc Program"],
+    "jobTitle": ["Associate Professor"],
     "worksFor": {
       "@type": "Organization",
       "name": "Universidad Adolfo Ibáñez",
@@ -135,7 +135,7 @@ schema_markup: >
     </div>
 </div>
 
-My research focuses on control systems theory and its applications, with particular emphasis on multi-agent systems and scalability (string stability) in formation control of autonomous vehicles. I am also an embedded systems enthusiast and I pursue their use in teaching and industrial applications. I am currently the Director of the Computer Engineering BSc program at UAI.
+My research focuses on control systems theory and its applications, with particular emphasis on multi-agent systems and scalability (string stability) in formation control of autonomous vehicles. I am also an embedded systems enthusiast and I pursue their use in teaching and industrial applications.
 
 Please do not hesitate to contact me (andres (dot) peters (at) uai (dot) cl) if you are interested in our postgraduate programs at UAI ([MCI - Magíster en Ciencias de la Ingeniería](https://www.uai.cl/postgrados/master-of-science/magister-en-ciencias-de-la-ingenieria) and [DDS - Doctorado en Data Science](https://www.uai.cl/postgrados/doctorados/doctorado-en-data-science))
 
