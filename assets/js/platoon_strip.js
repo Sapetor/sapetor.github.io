@@ -8,13 +8,28 @@
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
 
-  const N = 8, kp = 0.6, kd = 1.2, h = 1.0, tau = 0.2, r = 6.0, v0 = 20.0;
-  const dt = 0.01, period = 16.0;
+  const N = 8,
+    kp = 0.6,
+    kd = 1.2,
+    h = 1.0,
+    tau = 0.2,
+    r = 6.0,
+    v0 = 20.0;
+  const dt = 0.01,
+    period = 16.0;
   let x, v, a, t, peak;
 
   function reset() {
-    x = []; v = []; a = []; peak = [];
-    for (let i = 0; i < N; i++) { x.push(-i * (r + h * v0)); v.push(v0); a.push(0); peak.push(0); }
+    x = [];
+    v = [];
+    a = [];
+    peak = [];
+    for (let i = 0; i < N; i++) {
+      x.push(-i * (r + h * v0));
+      v.push(v0);
+      a.push(0);
+      peak.push(0);
+    }
     t = 0;
   }
 
@@ -52,7 +67,8 @@
 
   function draw() {
     const dpr = window.devicePixelRatio || 1;
-    const w = canvas.clientWidth, hgt = canvas.clientHeight;
+    const w = canvas.clientWidth,
+      hgt = canvas.clientHeight;
     if (canvas.width !== Math.round(w * dpr)) {
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(hgt * dpr);
@@ -63,15 +79,20 @@
     const road = hgt - 10;
     ctx.strokeStyle = css("--global-divider-color") || "#d8e0eb";
     ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(0, road + 0.5); ctx.lineTo(w, road + 0.5); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, road + 0.5);
+    ctx.lineTo(w, road + 0.5);
+    ctx.stroke();
 
     // Co-moving frame: nominal leader position at speed v0 stays fixed on screen.
-    const carW = Math.max(18, Math.min(44, w / 26)), carH = carW * 0.42;
+    const carW = Math.max(18, Math.min(44, w / 26)),
+      carH = carW * 0.42;
     const span = (N - 1) * (r + h * v0);
     const scale = (w - 2 * carW - 24) / span;
     const ref = v0 * t;
     const body = css("--global-theme-color") || "#1f4e9a";
-    const barMax = road - carH - 18, barW = Math.max(3, carW * 0.16);
+    const barMax = road - carH - 18,
+      barW = Math.max(3, carW * 0.16);
 
     for (let i = 0; i < N; i++) {
       const px = w - 12 - (ref - x[i]) * scale;
@@ -106,8 +127,12 @@
         ctx.fill();
       }
       ctx.fillStyle = css("--global-text-color-light") || "#5b6b82";
-      ctx.beginPath(); ctx.arc(px - carW * 0.75, road - 2, 2, 0, 2 * Math.PI); ctx.fill();
-      ctx.beginPath(); ctx.arc(px - carW * 0.25, road - 2, 2, 0, 2 * Math.PI); ctx.fill();
+      ctx.beginPath();
+      ctx.arc(px - carW * 0.75, road - 2, 2, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(px - carW * 0.25, road - 2, 2, 0, 2 * Math.PI);
+      ctx.fill();
     }
   }
 
@@ -121,14 +146,20 @@
     return;
   }
 
-  let last = null, visible = true;
-  new IntersectionObserver((e) => { visible = e[0].isIntersecting; }).observe(canvas);
+  let last = null,
+    visible = true;
+  new IntersectionObserver((e) => {
+    visible = e[0].isIntersecting;
+  }).observe(canvas);
   function frame(ts) {
     if (last === null) last = ts;
     let elapsed = Math.min(0.1, (ts - last) / 1000);
     last = ts;
     if (visible && !document.hidden) {
-      while (elapsed > 0) { step(); elapsed -= dt; }
+      while (elapsed > 0) {
+        step();
+        elapsed -= dt;
+      }
       if (t > period * 50) reset();
       draw();
     }

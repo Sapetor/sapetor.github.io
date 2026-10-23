@@ -17,7 +17,7 @@ seo:
     multi-agent systems, and formation control. Research focuses on decentralized control, 
     vehicle platooning, and string stability analysis.
   keywords: Andres Peters, Andrés Peters, control systems, vehicle platoons, string stability, formation control, UAI Chile
-  alternate_names: 
+  alternate_names:
     - Andres Peters
     - Andres A Peters
     - Andres A. Peters
@@ -45,7 +45,7 @@ news: true
 selected_papers: true
 social: true
 
-serve_og_meta: true 
+serve_og_meta: true
 serve_schema_org: true
 schema_markup: >
   {
@@ -121,7 +121,6 @@ schema_markup: >
       "Robotics"
     ]
   }
-
 ---
 
 <div class="d-none" aria-hidden="true">

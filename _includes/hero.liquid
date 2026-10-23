@@ -1,8 +1,13 @@
 <header class="hero">
   <div class="hero-text">
-    <h1 class="hero-name">{{ site.first_name }} A. {{ site.last_name }}</h1>
+    <h1 class="hero-name">
+      {{ site.first_name }}
+      {{ site.middle_name }}
+      {{ site.last_name }}
+    </h1>
     <p class="hero-role">
-      {{ page.hero_role }}<br>
+      {{ page.hero_role -}}
+      <br>
       {{ page.hero_affiliation }}
     </p>
     <p class="hero-statement">{{ page.hero_statement }}</p>
@@ -24,11 +29,15 @@
 </header>
 
 <figure class="platoon-figure">
-  <canvas id="platoon-strip" role="img" aria-label="Animation of eight vehicles in a platoon. When the leading vehicle slows down, each follower brakes less than the vehicle ahead of it."></canvas>
+  <canvas
+    id="platoon-strip"
+    role="img"
+    aria-label="Animation of eight vehicles in a platoon. When the leading vehicle slows down, each follower brakes less than the vehicle ahead of it."
+  ></canvas>
   <figcaption>
-    A simulated predecessor-following platoon with a constant time-headway policy. The bar above each vehicle is its deviation
-    from cruising speed, and the tick marks its largest speed drop during the current slow-down. When the leader (right) slows down,
-    each follower slows down less than the vehicle ahead, so the disturbance shrinks along the string. This property is called string stability.
+    A simulated predecessor-following platoon with a constant time-headway policy. The bar above each vehicle is its deviation from cruising speed,
+    and the tick marks its largest speed drop during the current slow-down. When the leader (right) slows down, each follower slows down less than the
+    vehicle ahead, so the disturbance shrinks along the string. This property is called string stability.
     <a href="{{ '/platoon/' | relative_url }}">Open the interactive simulator</a>
   </figcaption>
 </figure>

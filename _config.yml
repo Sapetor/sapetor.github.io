@@ -4,7 +4,7 @@
 
 title: Andrés Peters # the website title (if blank, full name will be used instead)
 first_name: Andrés
-middle_name: 
+middle_name: A.
 last_name: Peters
 email: andres.peters@uai.cl
 description: >
@@ -323,7 +323,7 @@ display_categories: [] # these categories will be displayed on the front page of
 # -----------------------------------------------------------------------------
 scholar:
   last_name: [Peters]
-  first_name: [Andres, A.]
+  first_name: [Andres, Andrés, A., Andres A., Andrés A., Andres A, Andrés A]
 
   style: apa
   locale: en
