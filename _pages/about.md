@@ -3,7 +3,13 @@ layout: about
 title: about
 slug: about
 permalink: /
-subtitle: Associate Professor · Faculty of Engineering and Sciences · Universidad Adolfo Ibáñez
+subtitle: Associate Professor, Faculty of Engineering and Sciences, Universidad Adolfo Ibáñez
+hero: true
+hero_role: Associate Professor, Faculty of Engineering and Sciences
+hero_affiliation: Universidad Adolfo Ibáñez, Santiago, Chile
+hero_statement: >
+  I work on control theory for multi-agent systems, mainly vehicle platoons: how disturbances propagate along a string
+  of vehicles, how unreliable communication changes that, and which performance limits no controller can beat.
 
 seo:
   description: >
@@ -11,7 +17,7 @@ seo:
     multi-agent systems, and formation control. Research focuses on decentralized control, 
     vehicle platooning, and string stability analysis.
   keywords: Andres Peters, Andrés Peters, control systems, vehicle platoons, string stability, formation control, UAI Chile
-  alternate_names: 
+  alternate_names:
     - Andres Peters
     - Andres A Peters
     - Andres A. Peters
@@ -39,7 +45,7 @@ news: true
 selected_papers: true
 social: true
 
-serve_og_meta: true 
+serve_og_meta: true
 serve_schema_org: true
 schema_markup: >
   {
@@ -49,7 +55,7 @@ schema_markup: >
     "alternateName": ["Andres Peters", "Andres A. Peters", "A. Peters", "Peters, Andres"],
     "givenName": "Andrés",
     "familyName": "Peters",
-    "jobTitle": ["Associate Professor", "Director of Computer Engineering BSc Program"],
+    "jobTitle": ["Associate Professor"],
     "worksFor": {
       "@type": "Organization",
       "name": "Universidad Adolfo Ibáñez",
@@ -115,7 +121,6 @@ schema_markup: >
       "Robotics"
     ]
   }
-
 ---
 
 <div class="d-none" aria-hidden="true">
@@ -126,44 +131,60 @@ schema_markup: >
   Location: Santiago, Chile
 </div>
 
-<div class="row mt-3">
-    <div class="col-sm mt-3 mt-md-0">
-        {% include video.liquid path="assets/video/pexels-engin-akyurt-6069112-960x540-30fps.mp4" class="img-fluid rounded z-depth-1" controls=true autoplay=true %}
+<section class="research-themes" markdown="0">
+  <h2>Research</h2>
+  <div class="theme-grid">
+    <div class="theme">
+      <h3>String stability of vehicle platoons</h3>
+      <p>Conditions under which a disturbance at the head of a vehicle string is attenuated, not amplified, as it travels backwards, for different spacing policies and interconnection topologies.</p>
+      <ul class="theme-papers">
+        <li><a href="https://doi.org/10.1016/j.automatica.2013.09.034">Leader tracking in homogeneous vehicle platoons with broadcast delays</a>, Automatica 2014</li>
+        <li><a href="https://doi.org/10.1016/j.ejcon.2015.12.002">Cyclic interconnection for formation control of 1-D vehicle strings</a>, European Journal of Control 2016</li>
+      </ul>
     </div>
-    <div class="col-sm mt-3 mt-md-0">
-        {% include video.liquid path="assets/video/pexels-engin-akyurt-6069112-960x540-30fps.mp4" class="img-fluid rounded z-depth-1" controls=true autoplay=true %}
+    <div class="theme">
+      <h3>Platooning over unreliable communication</h3>
+      <p>Stability and performance of cooperative platoons when vehicle-to-vehicle links lose packets, add noise, or deliver data with random delays, analysed in mean square and in expectation.</p>
+      <ul class="theme-papers">
+        <li><a href="https://doi.org/10.1016/j.automatica.2022.110710">Mean square stability conditions for platoons with lossy inter-vehicle communication channels</a>, Automatica 2023</li>
+        <li><a href="https://doi.org/10.1016/j.automatica.2024.111923">On stochastic string stability with applications to platooning over additive noise channels</a>, Automatica 2025</li>
+      </ul>
     </div>
-</div>
+    <div class="theme">
+      <h3>Performance limits in optimal control</h3>
+      <p>Closed-form bounds on the best achievable H<sub>&infin;</sub> performance under structural and parametric constraints, such as pole location or non-minimum phase zeros, and limits on the time headway that admits string stability.</p>
+      <ul class="theme-papers">
+        <li><a href="https://doi.org/10.1109/TAC.2020.2982135">An algebraic formula for performance bounds of a weighted H<sub>&infin;</sub> optimal control problem</a>, IEEE TAC 2021</li>
+        <li><a href="https://doi.org/10.1016/j.ifacol.2025.10.026">Fundamental limit on time headway for string stability of vehicular platooning</a>, IFAC-PapersOnLine 2025</li>
+      </ul>
+    </div>
+    <div class="theme">
+      <h3>Decentralized multi-agent models</h3>
+      <p>Simple local interaction rules, such as Cucker&ndash;Smale type flocking, that produce collision-free formations without a central coordinator.</p>
+      <ul class="theme-papers">
+        <li><a href="https://doi.org/10.1137/19M1241799">A collisionless singular Cucker&ndash;Smale model with decentralized formation control</a>, SIAM J. Applied Dynamical Systems 2019</li>
+        <li><a href="https://doi.org/10.3934/nhm.2025036">Collisionless and decentralized formation control for strings</a>, Networks and Heterogeneous Media 2025</li>
+      </ul>
+    </div>
+    <div class="theme">
+      <h3>Experimental platforms</h3>
+      <p>Low-cost, open-source hardware for testing platooning results and for teaching control: the PL-TOON train platoon and the RUPU line-following robots.</p>
+      <ul class="theme-papers">
+        <li><a href="https://doi.org/10.3390/s21062072">PL-TOON: a low-cost experimental platform for teaching and research on decentralized cooperative control</a>, Sensors 2021</li>
+        <li><a href="https://doi.org/10.1109/chilecon60335.2023.10418641">RUPU: an experimental platform to study line-following platooning problems</a>, IEEE CHILECON 2023</li>
+      </ul>
+    </div>
+  </div>
+</section>
 
-My research focuses on control systems theory and its applications, with particular emphasis on multi-agent systems and scalability (string stability) in formation control of autonomous vehicles. I am also an embedded systems enthusiast and I pursue their use in teaching and industrial applications. I am currently the Director of the Computer Engineering BSc program at UAI.
-
-Please do not hesitate to contact me (andres (dot) peters (at) uai (dot) cl) if you are interested in our postgraduate programs at UAI ([MCI - Magíster en Ciencias de la Ingeniería](https://www.uai.cl/postgrados/master-of-science/magister-en-ciencias-de-la-ingenieria) and [DDS - Doctorado en Data Science](https://www.uai.cl/postgrados/doctorados/doctorado-en-data-science))
-
-## Research Interests
-
-My research encompasses several interconnected areas in control theory and its applications:
-
-- **Formation Control and Vehicle Platooning**: Development and analysis of control strategies for vehicle formations, with emphasis on string stability and performance analysis under communication constraints.
-- **Multi-Agent Systems**: Design of decentralized control algorithms for cooperative tasks, particularly focusing on simple and explainable interactions and consensus maintenance.
-- **Networked Control Systems**: Analysis of control systems under communication constraints, including delays, packet losses, and stochastic perturbations.
-
-- **Performance Bounds in Optimal Control**: Understanding the fundamental limitations imposed by structural and parametric constraints, in the achievable performance of optimal linear controllers.
-
-## Research Grants (as PI)
+## Research grants (as PI)
 
 - **ANID/FONDECYT Regular 1251406 (2025-2029)**: "Characterizing the Effects of Lossy Links in Cooperative Control and Parameter Estimation of Vehicular Platoons"
-
 - **ANID/FONDECYT Iniciación 11221365 (2022-2025)**: "Decentralized Formation Control of Multi-Agent Systems with Applications to Platooning Under Unreliable Communication"
-
 - **ANID/FONDECYT Postdoctorado 3160738 (2015-2018)**: "Theoretical Aspects of Formation Control of Vehicular Platoons"
 
-## Student Supervision
+## Prospective students
 
-I supervise both undergraduate and graduate students in research projects related to:
+I supervise undergraduate and graduate projects in control theory, multi-agent systems, string stability, robotics and automation, experimental validation of control algorithms, and data-driven methods in control. I am also an embedded systems enthusiast, and some projects use them in teaching or industrial applications.
 
-- Control theory and applications
-- Multi-agent systems
-- Robotics and automation
-- String stability analysis
-- Experimental validation of control algorithms
-- Other random topics that amuse me such as sports related projects and data-driven methods in control and automation.
+If you are interested in the UAI postgraduate programs, the [MCI (Magíster en Ciencias de la Ingeniería)](https://www.uai.cl/postgrados/master-of-science/magister-en-ciencias-de-la-ingenieria) or the [DDS (Doctorado en Data Science)](https://www.uai.cl/postgrados/doctorados/doctorado-en-data-science), write to andres (dot) peters (at) uai (dot) cl.

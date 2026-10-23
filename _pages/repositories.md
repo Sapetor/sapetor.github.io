@@ -4,7 +4,7 @@ permalink: /repositories/
 title: repositories
 description: This is work done by my students in collaboration with colleagues from UTFSM #Edit the `_data/repositories.yml` and change the `github_users` and `github_repos` lists to include your own GitHub profile and repositories.
 nav: true
-nav_order: 4
+nav_order: 7
 ---
 
 {% if site.data.repositories.github_users %}
