@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Site-specific styles: typography, home-page hero, platoon strip, research themes.
+ * Site-specific styles: typography, home-page hero, research themes.
  ******************************************************************************/
 
 $serif: "Source Serif 4", Georgia, "Times New Roman", serif;
@@ -61,7 +61,8 @@ button:focus-visible {
   grid-template-columns: minmax(0, 1fr) 220px;
   gap: 2.5rem;
   align-items: start;
-  padding-top: 1.5rem;
+  padding: 1.5rem 0 2.5rem;
+  border-bottom: 1px solid var(--global-divider-color);
 }
 
 .hero-name {
@@ -123,32 +124,6 @@ button:focus-visible {
 .hero-photo img {
   width: 100%;
   border-radius: 4px;
-}
-
-// Platoon strip -------------------------------------------------------------
-
-.platoon-figure {
-  margin: 2.5rem 0 1rem;
-  border-top: 1px solid var(--global-divider-color);
-  padding-top: 1.25rem;
-
-  canvas {
-    display: block;
-    width: 100%;
-    height: 130px;
-  }
-
-  figcaption {
-    font-size: 0.88rem;
-    line-height: 1.55;
-    color: var(--global-text-color-light);
-    max-width: 46em;
-    margin-top: 0.5rem;
-
-    a {
-      white-space: nowrap;
-    }
-  }
 }
 
 // Research themes -----------------------------------------------------------
@@ -214,9 +189,5 @@ button:focus-visible {
 
   .theme-grid {
     grid-template-columns: 1fr;
-  }
-
-  .platoon-figure canvas {
-    height: 100px;
   }
 }
