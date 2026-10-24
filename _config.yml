@@ -22,7 +22,7 @@ last_updated: true # set to true if you want to display last updated in the foot
 impressum_path: # set to path to include impressum link in the footer, use the same path as permalink in a page, helps to conform with EU GDPR
 back_to_top: true # set to false to disable the back to top button
 
-# 
+#
 
 # -----------------------------------------------------------------------------
 # Address
@@ -145,8 +145,8 @@ bing_site_verification: # out your bing-site-verification ID (Bing Webmaster)
 # -----------------------------------------------------------------------------
 
 blog_name: # blog_name will be displayed in your blog page
-blog_description: 
-permalink: 
+blog_description:
+permalink:
 lsi: false # produce an index for related posts
 
 # Pagination
@@ -181,7 +181,6 @@ disqus_shortname: Sapetor # put your disqus shortname
 # you can display them in your blog by adding a link to the RSS feed.
 external_sources:
 
-
 # -----------------------------------------------------------------------------
 # Newsletter
 # -----------------------------------------------------------------------------
@@ -207,7 +206,7 @@ collections:
 
 announcements:
   enabled: true
-  scrollable: true # adds a vertical scroll bar if there are more than 3 news items
+  scrollable: false # adds a vertical scroll bar if there are more than 3 news items
   limit: 5 # leave blank to include all the news in the `_news` folder
 
 latest_posts:
@@ -233,7 +232,7 @@ kramdown:
       start_line: 1
 
 # Includes & excludes
-include: ["_pages","assets/js"]
+include: ["_pages", "assets/js"]
 exclude:
   - bin/
   - CONTRIBUTING.md
@@ -284,7 +283,7 @@ defaults:
     values:
       sitemap: false
   - scope:
-      path: "sample-posts"   
+      path: "sample-posts"
     values:
       sitemap: false
 
@@ -296,7 +295,16 @@ sass:
 # -----------------------------------------------------------------------------
 
 jekyll-minifier:
-  exclude: ["robots.txt", "assets/js/search/*.js", "assets/libs/**/*","scripts/mathjax.liquid", "assets/js/**/*.jsx", "assets/js/**/*.js", "assets/circuitos_RLC/static/js/**"]
+  exclude:
+    [
+      "robots.txt",
+      "assets/js/search/*.js",
+      "assets/libs/**/*",
+      "scripts/mathjax.liquid",
+      "assets/js/**/*.jsx",
+      "assets/js/**/*.js",
+      "assets/circuitos_RLC/static/js/**",
+    ]
   uglifier_args:
     harmony: true
 

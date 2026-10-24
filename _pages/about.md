@@ -43,7 +43,7 @@ profile:
 
 news: true
 selected_papers: true
-social: true
+social: false
 
 serve_og_meta: true
 serve_schema_org: true
@@ -177,11 +177,22 @@ schema_markup: >
   </div>
 </section>
 
-## Research grants (as PI)
+<h2>Research grants (as PI)</h2>
 
-- **ANID/FONDECYT Regular 1251406 (2025-2029)**: "Characterizing the Effects of Lossy Links in Cooperative Control and Parameter Estimation of Vehicular Platoons"
-- **ANID/FONDECYT Iniciación 11221365 (2022-2025)**: "Decentralized Formation Control of Multi-Agent Systems with Applications to Platooning Under Unreliable Communication"
-- **ANID/FONDECYT Postdoctorado 3160738 (2015-2018)**: "Theoretical Aspects of Formation Control of Vehicular Platoons"
+<table class="dated-list">
+  <tr>
+    <th scope="row">2025 - 2029</th>
+    <td>Characterizing the Effects of Lossy Links in Cooperative Control and Parameter Estimation of Vehicular Platoons. ANID/FONDECYT Regular 1251406.</td>
+  </tr>
+  <tr>
+    <th scope="row">2022 - 2025</th>
+    <td>Decentralized Formation Control of Multi-Agent Systems with Applications to Platooning Under Unreliable Communication. ANID/FONDECYT Iniciación 11221365.</td>
+  </tr>
+  <tr>
+    <th scope="row">2015 - 2018</th>
+    <td>Theoretical Aspects of Formation Control of Vehicular Platoons. ANID/FONDECYT Postdoctorado 3160738.</td>
+  </tr>
+</table>
 
 ## Prospective students
 
